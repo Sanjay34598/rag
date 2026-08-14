@@ -1,8 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { 
   Mic, Square, Loader2, CheckCircle2, AlertCircle, 
-  Search, FileText, Cpu, Clock, ShieldCheck, Database, Volume2,
-  RefreshCw, Sparkles, HelpCircle, Layers, Zap
+  Search, FileText, Clock, Database, RefreshCw, ShieldCheck
 } from 'lucide-react'
 
 interface LatencyBreakdown {
@@ -44,7 +43,6 @@ export default function App() {
   const audioChunksRef = useRef<Blob[]>([])
   const timerRef = useRef<number | null>(null)
 
-  // Clean up timer on unmount
   useEffect(() => {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current)
@@ -80,21 +78,20 @@ export default function App() {
       mediaRecorderRef.current = mediaRecorder
 
       mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
+        if (event.data && event.data.size > 0) {
           audioChunksRef.current.push(event.data)
         }
       }
 
       mediaRecorder.onstop = async () => {
-        // Stop stream tracks
         stream.getTracks().forEach((track) => track.stop())
-
         const finalMimeType = mediaRecorder.mimeType || mimeType || 'audio/webm'
         const audioBlob = new Blob(audioChunksRef.current, { type: finalMimeType })
         await submitVoiceQuery(audioBlob, finalMimeType)
       }
 
-      mediaRecorder.start()
+      // Record in 250ms chunks to ensure all audio data is captured
+      mediaRecorder.start(250)
       setUiState('RECORDING')
       setRecordingTime(0)
 
@@ -127,8 +124,21 @@ export default function App() {
   }
 
   const submitVoiceQuery = async (audioBlob: Blob, mimeType: string) => {
+    if (!audioBlob || audioBlob.size === 0) {
+      setErrorMsg('No audio recorded. Please try speaking again.')
+      setUiState('ERROR')
+      return
+    }
+
+    const cleanMime = mimeType.split(';')[0].trim()
+    let extension = 'webm'
+    if (cleanMime.includes('wav')) extension = 'wav'
+    else if (cleanMime.includes('mp3') || cleanMime.includes('mpeg')) extension = 'mp3'
+    else if (cleanMime.includes('ogg')) extension = 'ogg'
+    else if (cleanMime.includes('mp4') || cleanMime.includes('m4a')) extension = 'm4a'
+
     const formData = new FormData()
-    const filename = mimeType.includes('webm') ? 'recording.webm' : 'recording.wav'
+    const filename = `recording.${extension}`
     formData.append('file', audioBlob, filename)
 
     try {
@@ -158,14 +168,14 @@ export default function App() {
       const data = await response.json()
 
       if (!response.ok) {
-        throw new Error(data.detail || 'Voice processing failed.')
+        throw new Error(data.detail || 'Voice processing failed. Please try again.')
       }
 
       setResult(data)
       setUiState('SUCCESS')
     } catch (err: any) {
       console.error('Voice Query API Error:', err)
-      setErrorMsg(err.message || 'Error communicating with Voice RAG server.')
+      setErrorMsg(err.message || 'Voice processing failed. Please try again.')
       setUiState('ERROR')
     }
   }
@@ -256,347 +266,250 @@ export default function App() {
   ]
 
   return (
-    <div className="min-h-screen bg-[#070c14] text-slate-100 flex flex-col items-center justify-start p-4 sm:p-6 font-sans selection:bg-indigo-500/30 selection:text-indigo-200">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col items-center justify-between p-4 sm:p-6 md:p-8 font-sans">
       
-      {/* Container */}
-      <div className="max-w-4xl w-full bg-slate-900/80 border border-slate-800 rounded-3xl p-5 sm:p-8 shadow-2xl backdrop-blur-xl">
+      {/* Main Responsive Layout Wrapper */}
+      <div className="max-w-4xl w-full space-y-6">
         
-        {/* Header / Hero */}
-        <header className="pb-6 mb-8 border-b border-slate-800/80">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div className="flex items-center gap-3.5">
-              <div className="w-11 h-11 rounded-2xl bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center text-indigo-400 shrink-0 shadow-inner">
-                <Volume2 className="w-5 h-5" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
-                  Voice RAG
-                </h1>
-                <p className="text-xs text-slate-400 mt-0.5">
-                  Ask questions in Hindi. Get grounded answers from trusted knowledge.
-                </p>
-              </div>
-            </div>
-
-            {/* System Status */}
-            <div className="flex items-center gap-2 self-start md:self-auto">
-              <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-medium">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                System Ready
-              </span>
-            </div>
+        {/* Header */}
+        <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-200 dark:border-slate-800">
+          <div>
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
+              Voice RAG
+            </h1>
+            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
+              Ask questions in Hindi and get answers grounded in trusted knowledge.
+            </p>
           </div>
 
-          {/* Tech Stack Badges */}
-          <div className="flex flex-wrap items-center gap-2 mt-4 pt-4 border-t border-slate-800/50 text-[11px] font-mono text-slate-400">
-            <span className="px-2.5 py-1 rounded-md bg-slate-950 border border-slate-800 text-slate-300 flex items-center gap-1.5">
-              <Zap className="w-3 h-3 text-indigo-400" />
-              Sarvam • saaras:v3
-            </span>
-            <span className="px-2.5 py-1 rounded-md bg-slate-950 border border-slate-800 text-slate-300 flex items-center gap-1.5">
-              <Database className="w-3 h-3 text-cyan-400" />
-              FAISS + BM25 Hybrid
-            </span>
-            <span className="px-2.5 py-1 rounded-md bg-slate-950 border border-slate-800 text-slate-300 flex items-center gap-1.5">
-              <Cpu className="w-3 h-3 text-amber-400" />
-              Gemini 2.5 Flash
-            </span>
-            <span className="px-2.5 py-1 rounded-md bg-slate-950 border border-slate-800 text-slate-300 flex items-center gap-1.5">
-              <ShieldCheck className="w-3 h-3 text-emerald-400" />
-              Grounding Active
+          <div className="flex items-center gap-2 self-start sm:self-auto">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 text-xs font-medium">
+              <span className="w-2 h-2 rounded-full bg-emerald-500" />
+              System Ready
             </span>
           </div>
         </header>
 
-        {/* Main Voice Control Section */}
-        <section className="flex flex-col items-center justify-center p-6 sm:p-8 bg-slate-950/80 border border-slate-800/90 rounded-2xl mb-8 relative overflow-hidden">
+        {/* Main Search & Voice Control Hub */}
+        <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 sm:p-6 shadow-sm space-y-4">
           
-          {/* Microphone Main Action Button */}
-          {uiState === 'RECORDING' ? (
-            <div className="flex flex-col items-center gap-3">
-              <button
-                onClick={stopRecording}
-                aria-label="Stop recording speech"
-                className="w-24 h-24 rounded-full bg-rose-600 hover:bg-rose-500 text-white flex flex-col items-center justify-center gap-1 shadow-lg shadow-rose-600/30 transition-all transform hover:scale-105 active:scale-95 border-4 border-rose-400/40 cursor-pointer"
-              >
-                <Square className="w-8 h-8 fill-current" />
-                <span className="text-[10px] font-bold uppercase tracking-wider">Stop</span>
-              </button>
-
-              {/* Animated Waveform Visualizer */}
-              <div className="flex items-center gap-1.5 h-6 my-1">
-                <span className="w-1.5 bg-rose-400 rounded-full animate-waveform-1" />
-                <span className="w-1.5 bg-rose-400 rounded-full animate-waveform-2" />
-                <span className="w-1.5 bg-rose-400 rounded-full animate-waveform-3" />
-                <span className="w-1.5 bg-rose-400 rounded-full animate-waveform-4" />
-                <span className="w-1.5 bg-rose-400 rounded-full animate-waveform-5" />
-              </div>
-
-              <div className="text-rose-400 font-mono text-sm font-semibold flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping" />
-                <span>Listening... ({formatTime(recordingTime)})</span>
-              </div>
-              <span className="text-xs text-slate-400">Tap to stop</span>
-            </div>
-          ) : uiState === 'PROCESSING' ? (
-            <div className="flex flex-col items-center gap-3 py-2">
-              <div className="w-24 h-24 rounded-full bg-indigo-500/10 border border-indigo-500/40 text-indigo-400 flex items-center justify-center shadow-inner">
-                <Loader2 className="w-10 h-10 animate-spin" />
-              </div>
-              <p className="text-sm text-indigo-300 font-medium">Processing your question...</p>
-            </div>
-          ) : (
-            <div className="flex flex-col items-center gap-3">
-              <button
-                onClick={startRecording}
-                aria-label="Microphone input - Tap to speak in Hindi"
-                className="w-24 h-24 rounded-full bg-indigo-600 hover:bg-indigo-500 text-white flex flex-col items-center justify-center gap-1 shadow-lg shadow-indigo-600/30 transition-all transform hover:scale-105 active:scale-95 border-4 border-indigo-400/30 cursor-pointer"
-              >
-                <Mic className="w-9 h-9" />
-                <span className="text-[10px] font-bold uppercase tracking-wider">Speak</span>
-              </button>
-              <p className="text-xs font-medium text-slate-300">Tap to speak</p>
-            </div>
-          )}
-
-          {/* Quick Hindi Demo Sample Queries */}
-          {uiState !== 'RECORDING' && uiState !== 'PROCESSING' && (
-            <div className="mt-8 w-full max-w-lg pt-6 border-t border-slate-800/80">
-              <div className="flex items-center justify-between mb-2.5">
-                <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                  Try a sample question
-                </span>
-                <span className="text-[11px] text-slate-500">Instant Demo</span>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {sampleQueries.map((sample, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => handleSampleClick(sample)}
-                    className="text-xs bg-slate-900 hover:bg-slate-800 border border-slate-700/80 hover:border-indigo-500/50 text-slate-200 px-3 py-1.5 rounded-lg transition-colors text-left font-medium"
-                  >
-                    "{sample}"
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Text Query Input Fallback */}
-          {uiState !== 'RECORDING' && uiState !== 'PROCESSING' && (
-            <form onSubmit={handleTextSubmit} className="mt-4 w-full max-w-lg flex items-center gap-2">
+          {/* Integrated Search Input + Mic Button Bar */}
+          <form onSubmit={handleTextSubmit} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+            <div className="relative flex-1">
               <input
                 type="text"
                 value={textQuery}
                 onChange={(e) => setTextQuery(e.target.value)}
-                placeholder="या अपना प्रश्न यहाँ लिखें..."
-                className="flex-1 bg-slate-900 border border-slate-700/80 rounded-xl px-4 py-2.5 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                disabled={uiState === 'RECORDING' || uiState === 'PROCESSING'}
+                placeholder="अपना प्रश्न यहाँ लिखें (Or speak in Hindi)..."
+                className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-4 py-2.5 text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent disabled:opacity-50"
               />
+            </div>
+
+            <div className="flex items-center gap-2 shrink-0">
+              {uiState === 'RECORDING' ? (
+                <button
+                  type="button"
+                  onClick={stopRecording}
+                  aria-label="Stop recording speech"
+                  className="px-4 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-sm font-medium transition flex items-center gap-2 shadow-sm cursor-pointer"
+                >
+                  <Square className="w-4 h-4 fill-current" />
+                  <span>Stop ({formatTime(recordingTime)})</span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={startRecording}
+                  disabled={uiState === 'PROCESSING'}
+                  aria-label="Microphone input - speak in Hindi"
+                  className="px-3.5 py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded-lg text-sm font-medium transition flex items-center gap-2 disabled:opacity-50 cursor-pointer"
+                  title="Click to record voice query in Hindi"
+                >
+                  <Mic className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                  <span className="hidden sm:inline">Voice</span>
+                </button>
+              )}
+
               <button
                 type="submit"
-                disabled={!textQuery.trim()}
-                className="bg-slate-800 hover:bg-slate-700 disabled:opacity-40 text-slate-200 px-4 py-2.5 rounded-xl text-xs font-semibold transition border border-slate-700 flex items-center gap-1.5 shrink-0"
+                disabled={uiState === 'PROCESSING' || uiState === 'RECORDING' || !textQuery.trim()}
+                className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-lg text-sm font-medium transition flex items-center gap-2 shadow-sm shrink-0 cursor-pointer"
               >
-                <Search className="w-3.5 h-3.5" />
+                <Search className="w-4 h-4" />
                 <span>Search</span>
               </button>
-            </form>
+            </div>
+          </form>
+
+          {/* Active Voice Recording Status Bar */}
+          {uiState === 'RECORDING' && (
+            <div className="p-3 bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900 rounded-lg flex items-center justify-between text-xs text-rose-700 dark:text-rose-300">
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
+                <span className="font-semibold">● Recording active ({formatTime(recordingTime)})</span>
+                <span className="hidden sm:inline text-rose-600 dark:text-rose-400">— Speak your question in Hindi</span>
+              </div>
+              <button
+                onClick={stopRecording}
+                className="text-xs font-semibold underline hover:text-rose-900 dark:hover:text-white"
+              >
+                Click to stop
+              </button>
+            </div>
+          )}
+
+          {/* Sample Questions Row */}
+          {uiState !== 'RECORDING' && uiState !== 'PROCESSING' && (
+            <div className="pt-3 border-t border-slate-100 dark:border-slate-800/80 text-xs flex flex-wrap items-center gap-2 text-slate-500 dark:text-slate-400">
+              <span className="font-medium text-slate-700 dark:text-slate-300">Try a sample question:</span>
+              {sampleQueries.map((sample, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => handleSampleClick(sample)}
+                  className="hover:text-indigo-600 dark:hover:text-indigo-400 underline decoration-slate-300 dark:decoration-slate-700 underline-offset-2 transition-colors cursor-pointer"
+                >
+                  "{sample}"
+                </button>
+              ))}
+            </div>
           )}
 
         </section>
 
-        {/* Processing 4-Stage Stepper View */}
+        {/* Processing State Notice */}
         {uiState === 'PROCESSING' && (
-          <div className="p-6 rounded-2xl bg-slate-950/90 border border-slate-800 mb-8 space-y-4">
-            <div className="flex items-center justify-between text-xs text-slate-400 pb-3 border-b border-slate-800/80">
-              <span className="font-semibold uppercase tracking-wider text-slate-300 flex items-center gap-2">
-                <Layers className="w-4 h-4 text-indigo-400" />
-                Processing through 4-stage RAG pipeline...
-              </span>
-              <span className="font-mono text-indigo-400 text-[11px] animate-pulse">Active</span>
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-sm space-y-3">
+            <div className="flex items-center gap-3 text-sm font-medium text-slate-700 dark:text-slate-300">
+              <Loader2 className="w-4 h-4 text-indigo-600 dark:text-indigo-400 animate-spin" />
+              <span>Processing your question...</span>
             </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 text-xs">
-              <div className="p-3 rounded-xl bg-slate-900/90 border border-indigo-500/30 flex flex-col gap-1">
-                <span className="font-semibold text-indigo-300 flex items-center gap-1">
-                  ① Sarvam STT
-                </span>
-                <span className="text-[11px] text-slate-400">Transcribing speech</span>
-              </div>
-              <div className="p-3 rounded-xl bg-slate-900/90 border border-cyan-500/30 flex flex-col gap-1">
-                <span className="font-semibold text-cyan-300 flex items-center gap-1">
-                  ② FAISS + BM25
-                </span>
-                <span className="text-[11px] text-slate-400">Searching knowledge</span>
-              </div>
-              <div className="p-3 rounded-xl bg-slate-900/90 border border-amber-500/30 flex flex-col gap-1">
-                <span className="font-semibold text-amber-300 flex items-center gap-1">
-                  ③ Gemini 2.5 Flash
-                </span>
-                <span className="text-[11px] text-slate-400">Generating answer</span>
-              </div>
-              <div className="p-3 rounded-xl bg-slate-900/90 border border-emerald-500/30 flex flex-col gap-1">
-                <span className="font-semibold text-emerald-300 flex items-center gap-1">
-                  ④ Grounding & Safety
-                </span>
-                <span className="text-[11px] text-slate-400">Validating response</span>
-              </div>
+            <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500 dark:text-slate-400 font-mono">
+              <span className="flex items-center gap-1"><CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /> Speech recognized</span>
+              <span>•</span>
+              <span className="flex items-center gap-1"><CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /> Searching knowledge</span>
+              <span>•</span>
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" /> Generating answer</span>
             </div>
           </div>
         )}
 
-        {/* Error Alert Box */}
+        {/* Error Alert Card */}
         {errorMsg && (
-          <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 flex items-start gap-3 mb-8">
-            <AlertCircle className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" />
+          <div className="p-4 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 text-rose-800 dark:text-rose-200 flex items-start gap-3 text-sm">
+            <AlertCircle className="w-5 h-5 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
             <div>
-              <h4 className="text-sm font-semibold text-rose-300">Processing Error</h4>
-              <p className="text-xs text-rose-400/90 mt-1">{errorMsg}</p>
+              <h4 className="font-semibold text-rose-900 dark:text-rose-100">Processing Notice</h4>
+              <p className="text-xs text-rose-700 dark:text-rose-300 mt-1">{errorMsg}</p>
             </div>
           </div>
         )}
 
-        {/* Results Section */}
+        {/* Results Container */}
         {result && (
-          <div className="space-y-6">
-
-            {/* Reset Button */}
+          <div className="space-y-5">
+            
+            {/* Reset / Ask Another Question Button */}
             <div className="flex justify-end">
               <button
                 onClick={resetDemo}
-                className="text-xs bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 px-3.5 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 font-medium"
+                className="text-xs bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 px-3 py-1.5 rounded-lg transition shadow-sm flex items-center gap-1.5 font-medium cursor-pointer"
               >
                 <RefreshCw className="w-3.5 h-3.5" />
                 <span>Ask another question</span>
               </button>
             </div>
 
-            {/* Grounded Answer Hero Card (or Refusal Guardrail Card) */}
-            <div className="p-6 rounded-2xl bg-slate-950/90 border border-slate-800/90">
-              <div className="flex flex-wrap items-center justify-between gap-2 mb-4 pb-3 border-b border-slate-800/80">
-                <span className="font-semibold text-xs uppercase tracking-wider text-slate-400 flex items-center gap-2">
-                  <FileText className="w-4 h-4 text-cyan-400" />
-                  {result.grounded ? "Grounded Answer" : "Answer Not Verified"}
-                </span>
-
-                <div className="flex items-center gap-2">
+            {/* Answer Card */}
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 shadow-sm space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                <h3 className="text-sm font-semibold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
+                  <FileText className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                  Answer
+                </h3>
+                <div className="flex items-center gap-2 text-xs">
                   {result.grounded ? (
-                    <span className="flex items-center gap-1.5 text-xs font-medium bg-emerald-500/10 text-emerald-400 px-3 py-1 rounded-full border border-emerald-500/30">
-                      <CheckCircle2 className="w-3.5 h-3.5" /> GROUNDED
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 font-medium">
+                      <CheckCircle2 className="w-3.5 h-3.5" /> Grounded
                     </span>
                   ) : (
-                    <span className="flex items-center gap-1.5 text-xs font-medium bg-amber-500/10 text-amber-400 px-3 py-1 rounded-full border border-amber-500/30">
-                      <AlertCircle className="w-3.5 h-3.5" /> Grounding Protection Active
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-400 font-medium">
+                      <ShieldCheck className="w-3.5 h-3.5" /> Grounding Protection Active
                     </span>
                   )}
-                  <span className="text-xs font-mono text-slate-400 bg-slate-900 px-2.5 py-1 rounded-md border border-slate-800">
+                  <span className="font-mono text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded">
                     Confidence: {(result.confidence * 100).toFixed(0)}%
                   </span>
                 </div>
               </div>
 
-              {/* Answer Content */}
               {result.grounded ? (
-                <p className="text-lg text-slate-100 leading-relaxed bg-slate-900/60 p-5 rounded-xl border border-slate-800/80 font-normal">
+                <p className="text-base sm:text-lg text-slate-800 dark:text-slate-100 leading-relaxed font-normal">
                   {result.answer}
                 </p>
               ) : (
-                <div className="p-5 rounded-xl bg-amber-500/5 border border-amber-500/20 text-slate-300 space-y-2">
-                  <p className="text-base text-amber-200 font-medium">
+                <div className="p-4 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/60 text-slate-700 dark:text-slate-300 space-y-1">
+                  <p className="text-sm font-medium text-amber-900 dark:text-amber-200">
                     "I couldn't verify this answer from the available knowledge."
                   </p>
-                  <p className="text-xs text-slate-400">
-                    The system avoids generating an unsupported answer when the retrieved evidence is insufficient.
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    The system avoids generating unsupported answers when retrieved evidence is insufficient.
                   </p>
                 </div>
               )}
             </div>
 
-            {/* Recognized Speech / Transcript Card */}
-            <div className="p-5 rounded-2xl bg-slate-950/70 border border-slate-800/80">
-              <div className="flex items-center justify-between text-xs text-slate-400 mb-2">
-                <span className="font-semibold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-                  <Mic className="w-3.5 h-3.5 text-indigo-400" />
-                  Recognized Speech
-                </span>
-                <div className="flex items-center gap-2 font-mono text-indigo-400 text-xs">
-                  <span>Language: {result.language_code || 'hi-IN'}</span>
-                  {result.language_probability !== undefined && result.language_probability !== null && (
-                    <span className="text-slate-400">| Confidence: {(result.language_probability * 100).toFixed(0)}%</span>
-                  )}
-                </div>
+            {/* Recognized Speech Card */}
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-sm space-y-2">
+              <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+                <span className="font-medium text-slate-700 dark:text-slate-300">Recognized speech</span>
+                <span className="font-mono">Language: Hindi (hi-IN)</span>
               </div>
-              <p className="text-base font-medium text-slate-200 bg-slate-900/50 p-3.5 rounded-xl border border-slate-800/80">
+              <p className="text-sm sm:text-base font-medium text-slate-800 dark:text-slate-200">
                 "{result.transcript}"
               </p>
             </div>
 
-            {/* Pipeline Performance / Latency Breakdown */}
-            <div className="p-5 rounded-2xl bg-slate-950/70 border border-slate-800/80">
-              <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
-                <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-                  <Clock className="w-3.5 h-3.5 text-purple-400" />
-                  Pipeline Performance
-                </h4>
-                <span className="text-[11px] text-slate-500">
-                  Target: &lt;200 ms for local hybrid retrieval stage
+            {/* Performance Metrics */}
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-sm space-y-3">
+              <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+                <span className="font-semibold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
+                  <Clock className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+                  Performance
                 </span>
+                <span className="text-[11px]">Target: &lt;200 ms for local retrieval stage</span>
               </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
-                
-                {/* Local Retrieval */}
-                <div className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800 flex flex-col justify-between gap-2">
-                  <span className="text-[11px] text-slate-400 uppercase tracking-wider font-semibold">Local Retrieval</span>
-                  <div className="flex items-baseline justify-between font-mono">
-                    <span className="text-slate-400">Hybrid Search:</span>
-                    <span className="text-base font-bold text-cyan-400">{result.latency.retrieval_ms} ms</span>
-                  </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs font-mono">
+                <div className="p-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg flex items-center justify-between">
+                  <span className="text-slate-500">Retrieval</span>
+                  <span className="font-bold text-slate-900 dark:text-slate-100">{result.latency.retrieval_ms} ms</span>
                 </div>
-
-                {/* Cloud Services */}
-                <div className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800 flex flex-col justify-between gap-2">
-                  <span className="text-[11px] text-slate-400 uppercase tracking-wider font-semibold">Cloud Services</span>
-                  <div className="space-y-1 font-mono">
-                    <div className="flex items-baseline justify-between">
-                      <span className="text-slate-400">Sarvam STT:</span>
-                      <span className="text-sm font-semibold text-indigo-400">{result.latency.stt_ms} ms</span>
-                    </div>
-                    <div className="flex items-baseline justify-between">
-                      <span className="text-slate-400">Gemini 2.5 Flash:</span>
-                      <span className="text-sm font-semibold text-amber-400">{result.latency.llm_ms} ms</span>
-                    </div>
-                  </div>
+                <div className="p-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg flex items-center justify-between">
+                  <span className="text-slate-500">Gemini</span>
+                  <span className="font-bold text-slate-900 dark:text-slate-100">{result.latency.llm_ms} ms</span>
                 </div>
-
-                {/* Total Server Latency */}
-                <div className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-700/80 flex flex-col justify-between gap-2">
-                  <span className="text-[11px] text-slate-400 uppercase tracking-wider font-semibold">Total Server Latency</span>
-                  <div className="flex items-baseline justify-between font-mono">
-                    <span className="text-slate-400">Total:</span>
-                    <span className="text-base font-bold text-purple-400">{result.latency.total_ms} ms</span>
-                  </div>
+                <div className="p-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg flex items-center justify-between">
+                  <span className="text-slate-500">Total</span>
+                  <span className="font-bold text-indigo-600 dark:text-indigo-400">{result.latency.total_ms} ms</span>
                 </div>
-
               </div>
             </div>
 
-            {/* Retrieved Sources Section */}
+            {/* Sources List */}
             {result.sources && result.sources.length > 0 && (
-              <div className="p-5 rounded-2xl bg-slate-950/70 border border-slate-800/80">
-                <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3 flex items-center gap-1.5">
-                  <Database className="w-3.5 h-3.5 text-cyan-400" />
-                  Retrieved Sources ({result.sources.length})
+              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-sm space-y-3">
+                <h4 className="text-xs font-semibold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
+                  <Database className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+                  Sources ({result.sources.length})
                 </h4>
                 <div className="space-y-2.5">
                   {result.sources.map((source, idx) => (
-                    <div key={idx} className="p-3.5 rounded-xl bg-slate-900/60 border border-slate-800/80 text-xs space-y-1">
-                      <div className="flex items-center justify-between text-slate-400 font-mono">
-                        <span className="font-semibold text-slate-300">SOURCE {(idx + 1).toString().padStart(2, '0')} • {source.chunk_id}</span>
-                        <span className="text-indigo-400">Score: {source.score}</span>
+                    <div key={idx} className="p-3.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-xs space-y-1">
+                      <div className="flex items-center justify-between font-mono text-slate-400">
+                        <span className="font-semibold text-slate-700 dark:text-slate-300">Source {idx + 1} • {source.chunk_id}</span>
+                        <span>Score: {source.score}</span>
                       </div>
-                      <p className="text-slate-300 leading-relaxed">{source.text}</p>
+                      <p className="text-slate-700 dark:text-slate-300 leading-relaxed">{source.text}</p>
                     </div>
                   ))}
                 </div>
@@ -607,9 +520,9 @@ export default function App() {
         )}
 
         {/* Footer */}
-        <footer className="mt-8 text-center text-xs text-slate-500 flex items-center justify-center gap-2 border-t border-slate-800/80 pt-4">
-          <Cpu className="w-3.5 h-3.5" />
+        <footer className="pt-6 border-t border-slate-200 dark:border-slate-800 text-center text-xs text-slate-400 flex flex-col sm:flex-row items-center justify-between gap-2">
           <span>Voice RAG • Hackathon Production System</span>
+          <span className="font-mono text-[11px]">Sarvam STT + FAISS/BM25 Hybrid + Gemini 2.5 Flash</span>
         </footer>
 
       </div>

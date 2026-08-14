@@ -41,8 +41,9 @@ class SarvamSTTService:
             "api-subscription-key": settings.SARVAM_API_KEY
         }
 
+        clean_mime_type = (mime_type or "audio/wav").split(";")[0].strip()
         files = {
-            "file": (filename, audio_bytes, mime_type)
+            "file": (filename, audio_bytes, clean_mime_type)
         }
 
         data = {
