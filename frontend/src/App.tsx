@@ -178,7 +178,7 @@ export default function App() {
     setResult(null)
 
     try {
-      const endpoints = ['/api/v1/rag/answer', 'http://127.0.0.1:8000/api/v1/rag/answer']
+      const endpoints = ['/api/v1/rag/query', 'http://127.0.0.1:8000/api/v1/rag/query']
       let response: Response | null = null
 
       for (const url of endpoints) {

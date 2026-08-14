@@ -42,3 +42,20 @@ def test_voice_query_missing_api_key(monkeypatch):
     )
     assert response.status_code == 503
     assert "Voice Query unavailable" in response.json()["detail"]
+
+@patch("requests.post")
+def test_voice_query_api_error_handling(mock_post, monkeypatch):
+    monkeypatch.setattr(settings, "SARVAM_API_KEY", "dummy_sarvam_key")
+    
+    mock_resp = MagicMock()
+    mock_resp.status_code = 400
+    mock_resp.text = "Bad Request from Sarvam"
+    mock_post.return_value = mock_resp
+
+    response = client.post(
+        "/api/v1/voice/query",
+        files={"file": ("sample.wav", b"fake audio data content", "audio/wav")}
+    )
+    assert response.status_code == 400
+    assert response.status_code != 500
+

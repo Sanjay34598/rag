@@ -47,14 +47,37 @@ async def voice_query(file: UploadFile = File(...)):
     if not success:
         error_msg = stt_res.get("error", "Speech-to-Text transcription failed.")
         code = stt_res.get("code", "STT_ERROR")
+        upstream_status = stt_res.get("status_code", 500)
+
         if code == "MISSING_API_KEY":
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                 detail=f"Voice Query unavailable: {error_msg}"
             )
-        elif code == "EMPTY_TRANSCRIPT":
+        elif code in ("EMPTY_TRANSCRIPT", "EMPTY_AUDIO"):
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=error_msg
+            )
+        elif code == "TIMEOUT":
+            raise HTTPException(
+                status_code=status.HTTP_504_GATEWAY_TIMEOUT,
+                detail=error_msg
+            )
+        elif code == "API_ERROR":
+            if 400 <= upstream_status < 500:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=error_msg
+                )
+            else:
+                raise HTTPException(
+                    status_code=status.HTTP_502_BAD_GATEWAY,
+                    detail=error_msg
+                )
+        elif code == "CONNECTION_ERROR":
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
                 detail=error_msg
             )
         else:

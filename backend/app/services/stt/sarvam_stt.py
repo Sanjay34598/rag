@@ -65,7 +65,8 @@ class SarvamSTTService:
                 return False, {
                     "error": f"Sarvam STT API failed with HTTP {response.status_code}",
                     "details": response.text[:200],
-                    "code": "API_ERROR"
+                    "code": "API_ERROR",
+                    "status_code": response.status_code
                 }, round(latency_ms, 2)
 
             res_data = response.json()
