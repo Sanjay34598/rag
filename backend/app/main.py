@@ -1,13 +1,29 @@
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from app.core.config import settings
+from app.api.v1.api import api_router
+from app.services.rag.rag_service import get_rag_service
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    print(f"[{settings.PROJECT_NAME}] Starting up...")
+    print(f"[{settings.PROJECT_NAME}] Pre-loading RAG & retrieval models & indexes...")
+    try:
+        service = get_rag_service()
+        service.initialize(load_indexes=True)
+    except Exception as e:
+        print(f"[{settings.PROJECT_NAME}] Warning during startup model loading: {e}")
+    yield
+    print(f"[{settings.PROJECT_NAME}] Shutting down...")
 
 app = FastAPI(
-    title="Voice RAG System API",
-    description="Backend API for Voice-Enabled RAG System (HH Goa 2026)",
-    version="0.1.0",
+    title=settings.PROJECT_NAME,
+    version=settings.VERSION,
+    openapi_url=f"{settings.API_V1_STR}/openapi.json",
+    lifespan=lifespan
 )
 
-# Enable CORS for frontend integration
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -16,20 +32,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(api_router, prefix=settings.API_V1_STR)
 
 @app.get("/")
-def read_root():
+def root():
     return {
-        "message": "Voice-Enabled RAG System API is running",
-        "docs": "/docs",
-        "health": "/health",
+        "message": f"Welcome to {settings.PROJECT_NAME}",
+        "version": settings.VERSION,
+        "docs": "/docs"
     }
-
 
 @app.get("/health")
-def health_check():
-    return {
-        "status": "ok",
-        "service": "voice-rag-backend",
-        "version": "0.1.0",
-    }
+def health():
+    return {"status": "ok", "version": settings.VERSION}
