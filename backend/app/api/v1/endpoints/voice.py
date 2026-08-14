@@ -8,6 +8,8 @@ from app.api.v1.endpoints.stt import validate_audio_file
 
 router = APIRouter()
 
+from typing import List, Dict, Any, Optional
+
 class VoiceLatencyDetail(BaseModel):
     stt_ms: float
     retrieval_ms: float
@@ -18,6 +20,8 @@ class VoiceLatencyDetail(BaseModel):
 
 class VoiceQueryResponse(BaseModel):
     transcript: str
+    language_code: Optional[str] = "hi-IN"
+    language_probability: Optional[float] = None
     answer: str
     grounded: bool
     confidence: float
@@ -77,6 +81,8 @@ async def voice_query(file: UploadFile = File(...)):
 
     return VoiceQueryResponse(
         transcript=transcript,
+        language_code=stt_res.get("language_code", "hi-IN"),
+        language_probability=stt_res.get("language_probability"),
         answer=rag_res["answer"],
         grounded=rag_res["grounded"],
         confidence=rag_res["confidence"],

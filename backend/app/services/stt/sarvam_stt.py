@@ -47,7 +47,8 @@ class SarvamSTTService:
 
         data = {
             "model": settings.SARVAM_STT_MODEL,
-            "language_code": "hi-IN"
+            "mode": settings.SARVAM_STT_MODE,
+            "language_code": settings.SARVAM_LANGUAGE_CODE
         }
 
         try:
@@ -69,7 +70,8 @@ class SarvamSTTService:
 
             res_data = response.json()
             transcript = res_data.get("transcript", "")
-            language_code = res_data.get("language_code", "hi-IN")
+            language_code = res_data.get("language_code", settings.SARVAM_LANGUAGE_CODE)
+            language_probability = res_data.get("language_probability")
 
             if not transcript or not transcript.strip():
                 return False, {
@@ -79,8 +81,8 @@ class SarvamSTTService:
 
             result = {
                 "transcript": transcript.strip(),
-                "language": language_code,
-                "confidence": 1.0,
+                "language_code": language_code,
+                "language_probability": language_probability,
                 "latency_ms": round(latency_ms, 2)
             }
             return True, result, round(latency_ms, 2)

@@ -14,8 +14,8 @@ ALLOWED_EXTENSIONS = {".wav", ".mp3", ".webm", ".ogg", ".m4a", ".aac", ".flac"}
 
 class STTTranscribeResponse(BaseModel):
     transcript: str
-    language: str = "hi-IN"
-    confidence: float = 1.0
+    language_code: Optional[str] = "hi-IN"
+    language_probability: Optional[float] = None
     latency_ms: float
 
 def validate_audio_file(file: UploadFile, content_bytes: bytes):
@@ -82,7 +82,7 @@ async def transcribe_audio(file: UploadFile = File(...)):
 
     return STTTranscribeResponse(
         transcript=result["transcript"],
-        language=result.get("language", "hi-IN"),
-        confidence=result.get("confidence", 1.0),
+        language_code=result.get("language_code", "hi-IN"),
+        language_probability=result.get("language_probability"),
         latency_ms=latency_ms
     )

@@ -48,7 +48,9 @@ class Settings:
 
     # Sarvam STT Settings (Stage 5B)
     SARVAM_API_KEY: str = os.getenv("SARVAM_API_KEY", "")
-    SARVAM_STT_MODEL: str = os.getenv("SARVAM_STT_MODEL", "saarika:v1")
+    SARVAM_STT_MODEL: str = os.getenv("SARVAM_STT_MODEL", "saaras:v3")
+    SARVAM_STT_MODE: str = os.getenv("SARVAM_STT_MODE", "transcribe")
+    SARVAM_LANGUAGE_CODE: str = os.getenv("SARVAM_LANGUAGE_CODE", "hi-IN")
     SARVAM_STT_URL: str = os.getenv("SARVAM_STT_URL", "https://api.sarvam.ai/speech-to-text")
     SARVAM_TIMEOUT: float = float(os.getenv("SARVAM_TIMEOUT", "15.0"))
 

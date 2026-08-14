@@ -51,8 +51,7 @@ def test_transcribe_success(mock_post, monkeypatch):
     assert response.status_code == 200
     data = response.json()
     assert data["transcript"] == "कॉर्पोरेशन क्या है?"
-    assert data["language"] == "hi-IN"
-    assert data["confidence"] == 1.0
+    assert data["language_code"] == "hi-IN"
     assert "latency_ms" in data
 
 @patch("requests.post")

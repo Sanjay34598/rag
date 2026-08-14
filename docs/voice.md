@@ -6,47 +6,62 @@ The Stage 5B pipeline extends the grounded RAG architecture with voice recording
 ```
 Browser Microphone
         ↓
-MediaRecorder API (Local Blob)
+MediaRecorder API (Dynamic MIME Detection, 30s Max Limit)
         ↓
 FastAPI Backend (POST /api/v1/voice/query)
         ↓
-Sarvam STT Service (saarika:v1 / saaras:v1)
+Sarvam STT REST API (saaras:v3, mode=transcribe, language_code=hi-IN)
         ↓
-Recognized Hindi Transcript
+Recognized Hindi Text Transcript
         ↓
-Input Guardrail & Hybrid Retrieval (FAISS + BM25)
+Input & Prompt Injection Guardrails
+        ↓
+Hybrid Retrieval Engine (FAISS Vector + BM25 Sparse)
         ↓
 Retrieval Guardrail & Context Builder
         ↓
 LLM / Extracted Fallback Answer Generator
         ↓
-Grounding Validator (Stopword-filtered token overlap)
+Grounding Validator (Stopword-Filtered Token Overlap)
         ↓
-Structured Response with Latency Breakdown
+Structured Response with Real Latency Breakdown
 ```
 
-## 2. API Endpoints
+## 2. Sarvam STT REST Configuration
+- **Model**: `SARVAM_STT_MODEL=saaras:v3` (Current recommended STT model)
+- **Mode**: `SARVAM_STT_MODE=transcribe` (Preserves native spoken language without translation)
+- **Language Code**: `SARVAM_LANGUAGE_CODE=hi-IN`
+- **Endpoint**: `https://api.sarvam.ai/speech-to-text`
+- **Form Data Fields**:
+  - `model`: `"saaras:v3"`
+  - `mode`: `"transcribe"`
+  - `language_code`: `"hi-IN"`
+  - `file`: `(filename, audio_bytes, mime_type)`
 
-### 2.1 Speech-to-Text Transcription (`POST /api/v1/stt/transcribe`)
+## 3. API Endpoints
+
+### 3.1 Speech-to-Text Transcription (`POST /api/v1/stt/transcribe`)
 - **Content-Type**: `multipart/form-data`
 - **Body**: `file` (binary audio blob - WAV, MP3, WEBM, OGG, M4A, AAC, FLAC)
 - **Response**:
 ```json
 {
   "transcript": "कॉर्पोरेशन क्या है?",
-  "language": "hi-IN",
-  "confidence": 1.0,
+  "language_code": "hi-IN",
+  "language_probability": 0.98,
   "latency_ms": 145.2
 }
 ```
 
-### 2.2 Voice Query RAG Pipeline (`POST /api/v1/voice/query`)
+### 3.2 Voice Query RAG Pipeline (`POST /api/v1/voice/query`)
 - **Content-Type**: `multipart/form-data`
 - **Body**: `file` (binary audio blob)
 - **Response**:
 ```json
 {
   "transcript": "कॉर्पोरेशन क्या है?",
+  "language_code": "hi-IN",
+  "language_probability": 0.98,
   "answer": "मैकडॉनल्ड कॉर्पोरेशन दुनिया के सबसे पहचानने योग्य निगमों में...",
   "grounded": true,
   "confidence": 1.0,
@@ -68,26 +83,12 @@ Structured Response with Latency Breakdown
 }
 ```
 
-## 3. Configuration & Security
-- **API Key Configuration**: `SARVAM_API_KEY` set via environment variable or `.env`.
-- **Missing API Key Behavior**: If `SARVAM_API_KEY` is not set, API returns `503 Service Unavailable` with structured detail `"REAL SARVAM TEST = NOT AVAILABLE"`. The application continues running without crashing.
-- **Secrets Protection**: API keys remain strictly server-side and are never logged or exposed in HTTP responses.
-- **Audio Cleanup**: Audio streams are processed in-memory (`UploadFile.read()`) without permanent disk storage.
+## 4. Frontend MediaRecorder & 30s Limit
+- **Dynamic Format Detection**: Evaluates `MediaRecorder.isTypeSupported(...)` across `audio/webm;codecs=opus`, `audio/webm`, `audio/ogg;codecs=opus`, `audio/mp4`, `audio/wav`.
+- **Duration Limit**: Automatically stops recording at 30 seconds to comply with Sarvam REST API specs.
+- **Server File Size Limit**: Enforces 10MB max upload size.
 
-## 4. Hindi Language Processing
-- Audio input is transcribed natively in Hindi Devanagari script.
-- The raw transcript is passed directly to the hybrid retrieval engine without translation.
-- Hindi Devanagari regex tokenization and custom stopword filtering (`का`, `के`, `की`, `है`, `और`, etc.) preserve accurate grounding verification.
-
-## 5. Latency Instrumentation
-The pipeline measures and breaks down processing time into discrete stages:
-1. `stt_ms`: Time taken for Sarvam STT API call.
-2. `retrieval_ms`: Dense FAISS vector + BM25 hybrid search.
-3. `context_ms`: Context string formatting and prompt assembly.
-4. `llm_ms`: Answer generation (Cloud API or Fallback).
-5. `grounding_ms`: Grounding validation token overlap check.
-6. `total_ms`: End-to-end server request duration.
-
-## 6. Known Limitations & Scope Bounds
-- **Single-shot Audio**: User records audio locally and sends a single chunk on stop recording (continuous audio streaming / VAD is intentionally out of scope).
-- **Format Support**: Standard web audio containers (`audio/webm`, `audio/wav`, `audio/mp3`, `audio/ogg`).
+## 5. Security & Fallback Behavior
+- **API Keys**: `SARVAM_API_KEY` is kept server-side.
+- **Missing Key Response**: Returns `503 Service Unavailable` with `"REAL SARVAM TEST = NOT AVAILABLE"`.
+- **No Hardcoded Confidence**: `language_probability` is mapped directly from Sarvam API response or set to `null` if unavailable.

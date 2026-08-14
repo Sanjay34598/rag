@@ -21,6 +21,8 @@ interface SourceChunk {
 
 interface VoiceQueryResponse {
   transcript: string
+  language_code?: string
+  language_probability?: number
   answer: string
   grounded: boolean
   confidence: number
@@ -48,6 +50,22 @@ export default function App() {
     }
   }, [])
 
+  const getSupportedMimeType = () => {
+    const candidates = [
+      'audio/webm;codecs=opus',
+      'audio/webm',
+      'audio/ogg;codecs=opus',
+      'audio/mp4',
+      'audio/wav'
+    ]
+    for (const type of candidates) {
+      if (typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(type)) {
+        return type
+      }
+    }
+    return ''
+  }
+
   const startRecording = async () => {
     setErrorMsg(null)
     setResult(null)
@@ -55,7 +73,9 @@ export default function App() {
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-      const mediaRecorder = new MediaRecorder(stream)
+      const mimeType = getSupportedMimeType()
+      const options = mimeType ? { mimeType } : {}
+      const mediaRecorder = new MediaRecorder(stream, options)
       mediaRecorderRef.current = mediaRecorder
 
       mediaRecorder.ondataavailable = (event) => {
@@ -68,8 +88,9 @@ export default function App() {
         // Stop stream tracks
         stream.getTracks().forEach((track) => track.stop())
 
-        const audioBlob = new Blob(audioChunksRef.current, { type: mediaRecorder.mimeType || 'audio/webm' })
-        await submitVoiceQuery(audioBlob, mediaRecorder.mimeType)
+        const finalMimeType = mediaRecorder.mimeType || mimeType || 'audio/webm'
+        const audioBlob = new Blob(audioChunksRef.current, { type: finalMimeType })
+        await submitVoiceQuery(audioBlob, finalMimeType)
       }
 
       mediaRecorder.start()
@@ -77,7 +98,13 @@ export default function App() {
       setRecordingTime(0)
 
       timerRef.current = window.setInterval(() => {
-        setRecordingTime((prev) => prev + 1)
+        setRecordingTime((prev) => {
+          if (prev >= 29) {
+            stopRecording()
+            return 30
+          }
+          return prev + 1
+        })
       }, 1000)
     } catch (err: any) {
       console.error('Microphone permission or recording error:', err)
@@ -325,7 +352,10 @@ export default function App() {
                   <Mic className="w-3.5 h-3.5 text-indigo-400" />
                   Recognized Transcript
                 </span>
-                <span className="font-mono text-indigo-400">Hindi (hi-IN)</span>
+                <span className="font-mono text-indigo-400">
+                  {result.language_code || 'hi-IN'}
+                  {result.language_probability !== undefined && result.language_probability !== null ? ` (${(result.language_probability * 100).toFixed(1)}%)` : ''}
+                </span>
               </div>
               <p className="text-lg font-medium text-slate-100 bg-slate-900/50 p-3.5 rounded-xl border border-slate-800/80">
                 "{result.transcript}"
