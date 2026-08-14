@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+from dotenv import load_dotenv
 
 # Suppress TensorFlow dependency conflicts in transformers
 os.environ["USE_TF"] = "0"
@@ -8,6 +9,13 @@ os.environ["TRANSFORMERS_NO_ADVISORY_WARNINGS"] = "1"
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 DATA_DIR = BASE_DIR / "data"
+
+# Load .env file from project root or parent directory
+env_path = BASE_DIR / ".env"
+if not env_path.exists() and (BASE_DIR.parent / ".env").exists():
+    env_path = BASE_DIR.parent / ".env"
+
+load_dotenv(env_path, override=True)
 
 class Settings:
     PROJECT_NAME: str = "Voice-Enabled RAG System"
@@ -34,9 +42,9 @@ class Settings:
     RERANKER_TOP_N: int = int(os.getenv("RERANKER_TOP_N", "5"))
 
     # LLM Settings (Stage 4)
-    LLM_MODE: str = os.getenv("LLM_MODE", "fallback").lower()  # "real" or "fallback"
+    LLM_MODE: str = os.getenv("LLM_MODE", "real").lower()  # "real" or "fallback"
     LLM_PROVIDER: str = os.getenv("LLM_PROVIDER", "gemini")
-    LLM_MODEL: str = os.getenv("LLM_MODEL", "gemini-1.5-flash")
+    LLM_MODEL: str = os.getenv("LLM_MODEL", "gemini-2.5-flash")
     LLM_API_KEY: str = os.getenv("LLM_API_KEY", os.getenv("GEMINI_API_KEY", os.getenv("OPENAI_API_KEY", "")))
     LLM_MAX_RETRIES: int = int(os.getenv("LLM_MAX_RETRIES", "2"))
     LLM_TIMEOUT: float = float(os.getenv("LLM_TIMEOUT", "10.0"))

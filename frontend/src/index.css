@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 :root {
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
+  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  line-height: 1.6;
   font-weight: 400;
   color-scheme: dark;
 }
@@ -10,6 +10,51 @@
 body {
   margin: 0;
   min-height: 100vh;
-  background-color: #0f172a;
-  color: #f8fafc;
+  background-color: #070c14;
+  color: #f1f5f9;
+}
+
+/* Audio Waveform CSS Animation */
+@keyframes waveform {
+  0%, 100% {
+    height: 6px;
+  }
+  50% {
+    height: 24px;
+  }
+}
+
+.animate-waveform-1 {
+  animation: waveform 1s infinite ease-in-out;
+  animation-delay: 0.0s;
+}
+
+.animate-waveform-2 {
+  animation: waveform 1s infinite ease-in-out;
+  animation-delay: 0.2s;
+}
+
+.animate-waveform-3 {
+  animation: waveform 1s infinite ease-in-out;
+  animation-delay: 0.4s;
+}
+
+.animate-waveform-4 {
+  animation: waveform 1s infinite ease-in-out;
+  animation-delay: 0.6s;
+}
+
+.animate-waveform-5 {
+  animation: waveform 1s infinite ease-in-out;
+  animation-delay: 0.8s;
+}
+
+/* Accessibility: Respect Reduced Motion Preferences */
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
