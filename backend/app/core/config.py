@@ -46,4 +46,10 @@ class Settings:
     MIN_CONTEXT_CHUNKS: int = int(os.getenv("MIN_CONTEXT_CHUNKS", "1"))
     MAX_CONTEXT_CHUNKS: int = int(os.getenv("MAX_CONTEXT_CHUNKS", "5"))
 
+    # Sarvam STT Settings (Stage 5B)
+    SARVAM_API_KEY: str = os.getenv("SARVAM_API_KEY", "")
+    SARVAM_STT_MODEL: str = os.getenv("SARVAM_STT_MODEL", "saarika:v1")
+    SARVAM_STT_URL: str = os.getenv("SARVAM_STT_URL", "https://api.sarvam.ai/speech-to-text")
+    SARVAM_TIMEOUT: float = float(os.getenv("SARVAM_TIMEOUT", "15.0"))
+
 settings = Settings()

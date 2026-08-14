@@ -1,6 +1,8 @@
 from fastapi import APIRouter
-from app.api.v1.endpoints import retrieval, rag
+from app.api.v1.endpoints import retrieval, rag, stt, voice
 
 api_router = APIRouter()
 api_router.include_router(retrieval.router, prefix="", tags=["retrieval"])
 api_router.include_router(rag.router, prefix="/rag", tags=["rag"])
+api_router.include_router(stt.router, prefix="/stt", tags=["stt"])
+api_router.include_router(voice.router, prefix="/voice", tags=["voice"])
