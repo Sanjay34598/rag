@@ -10,6 +10,8 @@ from app.services.rag.grounding_validator import GroundingValidator
 from app.services.rag.answer_generator import AnswerGenerator
 from app.services.rag.rag_service import RAGService
 
+from app.services.guardrails.query_intent_guard import QueryIntentGuard
+
 def test_input_guardrail():
     ig = InputGuardrail(max_query_length=50)
     valid, err = ig.validate("")
@@ -25,6 +27,20 @@ def test_input_guardrail():
 
     valid, err = ig.validate("कया विटामिन बी स्वास्थ्य के लिए उपयोगी है?")
     assert valid
+
+def test_query_intent_guard():
+    qig = QueryIntentGuard()
+    
+    # Conversational inputs MUST be detected
+    for phrase in ["आपके लिए धन्यवाद", "धन्यवाद", "नमस्ते", "अलविदा", "thank you", "hello"]:
+        is_conv, ans = qig.evaluate(phrase)
+        assert is_conv, f"Failed for '{phrase}'"
+        assert len(ans) > 0
+
+    # Knowledge queries MUST NOT be detected as conversational
+    for phrase in ["धन्यवाद शब्द का अर्थ क्या है?", "नमस्ते शब्द का अर्थ क्या है?", "कॉर्पोरेशन क्या है?", "वायुमंडलीय दबाव की परिभाषा"]:
+        is_conv, ans = qig.evaluate(phrase)
+        assert not is_conv, f"Incorrectly blocked '{phrase}'"
 
 def test_prompt_injection_guardrail():
     pig = PromptInjectionGuardrail()

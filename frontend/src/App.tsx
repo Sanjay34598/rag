@@ -181,6 +181,7 @@ export default function App() {
       setUiState('SUCCESS')
     } catch (err: any) {
       console.error('Voice Query API Error:', err)
+      setResult(null)
       const msg = err.name === 'TypeError' || err.message?.includes('fetch') 
         ? 'Failed to connect to Voice RAG API endpoint.' 
         : err.message
@@ -252,6 +253,7 @@ export default function App() {
       setUiState('SUCCESS')
     } catch (err: any) {
       console.error('Text Query API Error:', err)
+      setResult(null)
       const msg = err.name === 'TypeError' || err.message?.includes('fetch') 
         ? 'Failed to connect to Voice RAG API endpoint.' 
         : err.message
@@ -476,7 +478,7 @@ export default function App() {
               ) : (
                 <div className="p-4 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/60 text-slate-700 dark:text-slate-300 space-y-1">
                   <p className="text-sm font-medium text-amber-900 dark:text-amber-200">
-                    "I couldn't verify this answer from the available knowledge."
+                    "{result.answer}"
                   </p>
                   <p className="text-xs text-slate-500 dark:text-slate-400">
                     The system avoids generating unsupported answers when retrieved evidence is insufficient.

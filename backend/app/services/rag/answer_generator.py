@@ -70,17 +70,30 @@ class AnswerGenerator:
         """
         Extracted grounded answer fallback when offline mode is requested or no API key is available.
         """
+        REFUSAL_MSG = "मुझे इस प्रश्न का विश्वसनीय उत्तर देने के लिए पर्याप्त जानकारी नहीं मिली।"
+
         if not context_chunks:
             return {
-                "answer": "I couldn't find enough information in the available context to answer that question.",
+                "answer": REFUSAL_MSG,
                 "grounded": False,
                 "confidence": 0.0,
                 "llm_mode": "fallback"
             }
             
         top_chunk = context_chunks[0]
-        text = top_chunk.get("text", "").strip()
         score = top_chunk.get("score", 0.0)
+        dense_s = top_chunk.get("dense_score", 0.0)
+        bm25_s = top_chunk.get("bm25_score", 0.0)
+
+        if score < settings.MIN_RETRIEVAL_SCORE or (dense_s < 0.22 and bm25_s < 3.0):
+            return {
+                "answer": REFUSAL_MSG,
+                "grounded": False,
+                "confidence": 0.0,
+                "llm_mode": "fallback"
+            }
+        
+        text = top_chunk.get("text", "").strip()
         
         return {
             "answer": text,

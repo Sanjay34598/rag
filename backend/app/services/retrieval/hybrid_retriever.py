@@ -1,15 +1,21 @@
 from typing import List, Dict, Any
 from app.core.config import settings
 
-def min_max_normalize(scores: List[float]) -> List[float]:
+def min_max_normalize(scores: List[float], min_threshold: float = 0.0) -> List[float]:
     if not scores:
         return []
     min_s = min(scores)
     max_s = max(scores)
     range_s = max_s - min_s
     if range_s <= 1e-6:
-        return [1.0 for _ in scores]
-    return [(s - min_s) / range_s for s in scores]
+        s_val = 1.0 if max_s >= min_threshold else (max_s / min_threshold if min_threshold > 0 else 1.0)
+        return [s_val for _ in scores]
+    
+    scale = 1.0
+    if min_threshold > 0 and max_s < min_threshold:
+        scale = max(0.0, max_s / min_threshold)
+
+    return [((s - min_s) / range_s) * scale for s in scores]
 
 class HybridRetriever:
     def __init__(self, dense_weight: float = None, bm25_weight: float = None):
@@ -22,13 +28,13 @@ class HybridRetriever:
         bm25_results: List[Dict[str, Any]],
         top_k: int = 20
     ) -> List[Dict[str, Any]]:
-        # Normalize dense scores
+        # Normalize dense scores (expecting raw cosine similarity ~0.25+ for strong matches)
         dense_raw_scores = [r["dense_score"] for r in dense_results]
-        dense_norm_scores = min_max_normalize(dense_raw_scores)
+        dense_norm_scores = min_max_normalize(dense_raw_scores, min_threshold=0.25)
         
-        # Normalize BM25 scores
+        # Normalize BM25 scores (expecting raw BM25 score ~3.5+ for strong keyword matches)
         bm25_raw_scores = [r["bm25_score"] for r in bm25_results]
-        bm25_norm_scores = min_max_normalize(bm25_raw_scores)
+        bm25_norm_scores = min_max_normalize(bm25_raw_scores, min_threshold=3.5)
         
         candidates: Dict[str, Dict[str, Any]] = {}
         

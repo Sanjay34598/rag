@@ -5,6 +5,7 @@ from app.services.guardrails.input_guardrail import InputGuardrail
 from app.services.guardrails.retrieval_guardrail import RetrievalGuardrail
 from app.services.guardrails.prompt_injection_guardrail import PromptInjectionGuardrail
 from app.services.guardrails.output_guardrail import OutputGuardrail
+from app.services.guardrails.query_intent_guard import QueryIntentGuard
 from app.services.rag.context_builder import ContextBuilder
 from app.services.rag.prompt_builder import PromptBuilder
 from app.services.rag.answer_generator import get_answer_generator, AnswerGenerator
@@ -24,6 +25,7 @@ class RAGService:
             return
 
         self.input_guardrail = InputGuardrail()
+        self.query_intent_guard = QueryIntentGuard()
         self.retrieval_guardrail = RetrievalGuardrail()
         self.prompt_injection_guardrail = PromptInjectionGuardrail()
         self.output_guardrail = OutputGuardrail()
@@ -64,6 +66,25 @@ class RAGService:
                 }
             }
         t_input = (time.perf_counter() - t0) * 1000.0
+
+        # 1.5 Conversational Intent Check (BEFORE Retrieval)
+        is_conv, conv_ans = self.query_intent_guard.evaluate(query)
+        if is_conv:
+            total_lat = (time.perf_counter() - start_total) * 1000.0
+            return {
+                "query": query,
+                "answer": conv_ans,
+                "grounded": False,
+                "confidence": 0.0,
+                "sources": [],
+                "latency": {
+                    "retrieval_ms": 0.0,
+                    "context_ms": 0.0,
+                    "llm_ms": 0.0,
+                    "grounding_ms": 0.0,
+                    "total_ms": round(total_lat, 2)
+                }
+            }
 
         # 2. Retrieval Service
         if self.retrieval_service is None:
@@ -137,25 +158,26 @@ class RAGService:
 
         # 9. Grounding Validation
         t0 = time.perf_counter()
-        is_grounded, grounding_conf, final_answer = self.grounding_validator.validate(raw_answer, clean_chunks)
+        is_grounded, grounding_conf, final_answer = self.grounding_validator.validate(raw_answer, clean_chunks, query)
         t_grounding = (time.perf_counter() - t0) * 1000.0
 
         total_lat = (time.perf_counter() - start_total) * 1000.0
 
         # Format sources
         formatted_sources = []
-        for c in clean_chunks[:5]:
-            formatted_sources.append({
-                "chunk_id": c["chunk_id"],
-                "score": round(float(c.get("score", 0.0)), 4),
-                "text": c["text"]
-            })
+        if is_grounded:
+            for c in clean_chunks[:5]:
+                formatted_sources.append({
+                    "chunk_id": c["chunk_id"],
+                    "score": round(float(c.get("score", 0.0)), 4),
+                    "text": c["text"]
+                })
 
         return {
             "query": query,
             "answer": final_answer,
             "grounded": is_grounded,
-            "confidence": round(float(grounding_conf if is_grounded else raw_conf), 2),
+            "confidence": round(float(grounding_conf if is_grounded else 0.0), 2),
             "sources": formatted_sources,
             "latency": {
                 "retrieval_ms": round(t_retrieval, 2),
