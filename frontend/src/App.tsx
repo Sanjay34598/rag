@@ -142,40 +142,49 @@ export default function App() {
     formData.append('file', audioBlob, filename)
 
     try {
-      const endpoints = ['/api/v1/voice/query', 'http://127.0.0.1:8000/api/v1/voice/query']
-      let response: Response | null = null
-      let fetchError: Error | null = null
+      let res: Response
+      try {
+        res = await fetch('/api/v1/voice/query', {
+          method: 'POST',
+          body: formData,
+        })
+      } catch (networkErr: any) {
+        res = await fetch('http://127.0.0.1:8000/api/v1/voice/query', {
+          method: 'POST',
+          body: formData,
+        })
+      }
 
-      for (const url of endpoints) {
-        try {
-          const res = await fetch(url, {
-            method: 'POST',
-            body: formData,
-          })
-          if (res.ok || res.status === 400 || res.status === 422 || res.status === 503 || res.status === 504) {
-            response = res
-            break
-          }
-        } catch (e: any) {
-          fetchError = e
+      const data = await res.json().catch(() => ({}))
+
+      if (!res.ok) {
+        let detailMsg = ''
+        if (typeof data.detail === 'string') {
+          detailMsg = data.detail
+        } else if (Array.isArray(data.detail)) {
+          detailMsg = data.detail.map((d: any) => d.msg || JSON.stringify(d)).join(', ')
+        } else if (data.error) {
+          detailMsg = data.error
+        } else {
+          detailMsg = res.statusText || 'Unknown Error'
         }
-      }
 
-      if (!response) {
-        throw fetchError || new Error('Failed to connect to Voice RAG API endpoint.')
-      }
-
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.detail || 'Voice processing failed. Please try again.')
+        if (res.status === 400) throw new Error(`Bad Request (400): ${detailMsg}`)
+        if (res.status === 404) throw new Error(`Endpoint Not Found (404): ${detailMsg}`)
+        if (res.status === 422) throw new Error(`Validation Error (422): ${detailMsg}`)
+        if (res.status === 500) throw new Error(`Backend Error (500): ${detailMsg}`)
+        if (res.status >= 502 && res.status <= 504) throw new Error(`Service Error (${res.status}): ${detailMsg}`)
+        throw new Error(`Voice RAG API returned ${res.status}: ${detailMsg}`)
       }
 
       setResult(data)
       setUiState('SUCCESS')
     } catch (err: any) {
       console.error('Voice Query API Error:', err)
-      setErrorMsg(err.message || 'Voice processing failed. Please try again.')
+      const msg = err.name === 'TypeError' || err.message?.includes('fetch') 
+        ? 'Failed to connect to Voice RAG API endpoint.' 
+        : err.message
+      setErrorMsg(msg)
       setUiState('ERROR')
     }
   }
@@ -188,30 +197,43 @@ export default function App() {
     setResult(null)
 
     try {
-      const endpoints = ['/api/v1/rag/query', 'http://127.0.0.1:8000/api/v1/rag/query']
-      let response: Response | null = null
+      let res: Response
+      try {
+        res = await fetch('/api/v1/rag/query', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query: queryToRun }),
+        })
+      } catch (networkErr: any) {
+        res = await fetch('http://127.0.0.1:8000/api/v1/rag/query', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query: queryToRun }),
+        })
+      }
 
-      for (const url of endpoints) {
-        try {
-          const res = await fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ query: queryToRun }),
-          })
-          if (res.ok) {
-            response = res
-            break
-          }
-        } catch (e) {
-          // try next
+      const data = await res.json().catch(() => ({}))
+
+      if (!res.ok) {
+        let detailMsg = ''
+        if (typeof data.detail === 'string') {
+          detailMsg = data.detail
+        } else if (Array.isArray(data.detail)) {
+          detailMsg = data.detail.map((d: any) => d.msg || JSON.stringify(d)).join(', ')
+        } else if (data.error) {
+          detailMsg = data.error
+        } else {
+          detailMsg = res.statusText || 'Unknown Error'
         }
+
+        if (res.status === 400) throw new Error(`Bad Request (400): ${detailMsg}`)
+        if (res.status === 404) throw new Error(`Endpoint Not Found (404): ${detailMsg}`)
+        if (res.status === 422) throw new Error(`Validation Error (422): ${detailMsg}`)
+        if (res.status === 500) throw new Error(`Backend Error (500): ${detailMsg}`)
+        if (res.status >= 502 && res.status <= 504) throw new Error(`Service Error (${res.status}): ${detailMsg}`)
+        throw new Error(`Text RAG API returned ${res.status}: ${detailMsg}`)
       }
 
-      if (!response || !response.ok) {
-        throw new Error('Failed to fetch answer for text query.')
-      }
-
-      const data = await response.json()
       setResult({
         transcript: queryToRun,
         answer: data.answer,
@@ -229,7 +251,11 @@ export default function App() {
       })
       setUiState('SUCCESS')
     } catch (err: any) {
-      setErrorMsg(err.message || 'Text query processing failed.')
+      console.error('Text Query API Error:', err)
+      const msg = err.name === 'TypeError' || err.message?.includes('fetch') 
+        ? 'Failed to connect to Voice RAG API endpoint.' 
+        : err.message
+      setErrorMsg(msg)
       setUiState('ERROR')
     }
   }
