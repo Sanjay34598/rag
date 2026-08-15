@@ -30,7 +30,7 @@ class AnswerGenerator:
         self.groq_client = None
         if self.api_key:
             try:
-                self.groq_client = Groq(api_key=self.api_key)
+                self.groq_client = Groq(api_key=self.api_key, max_retries=0, timeout=self.timeout)
             except Exception as e:
                 print(f"[AnswerGenerator] Failed to initialize Groq client: {self._sanitize_string(str(e))}")
 
@@ -53,6 +53,7 @@ class AnswerGenerator:
             messages=[{"role": "user", "content": prompt}],
             model=self.model,
             temperature=0.2,
+            max_tokens=300,
             response_format={"type": "json_object"},
             timeout=self.timeout
         )

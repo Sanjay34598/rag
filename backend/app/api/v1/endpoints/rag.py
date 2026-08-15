@@ -12,6 +12,7 @@ class RAGQueryRequest(BaseModel):
 
 class RAGSource(BaseModel):
     chunk_id: str
+    language: Optional[str] = None
     score: float
     text: str
 
@@ -29,7 +30,7 @@ class RAGQueryResponse(BaseModel):
     confidence: float
     sources: List[RAGSource]
     latency: RAGLatency
-    language_code: Optional[str] = "hi-IN"
+    language_code: Optional[str] = None
 
 @router.post("/query", response_model=RAGQueryResponse, summary="Perform Grounded RAG Query")
 def rag_query_endpoint(request: RAGQueryRequest):

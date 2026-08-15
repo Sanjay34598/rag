@@ -77,6 +77,7 @@ class RAGService:
         valid, input_err = self.input_guardrail.validate(query)
         if not valid:
             total_lat = (time.perf_counter() - start_total) * 1000.0
+            print(f"[PERF] language={effective_lang} intent=input_error embedding=0.00ms faiss=0.00ms bm25=0.00ms fusion=0.00ms validation=0.00ms groq=0.00ms grounding=0.00ms total={total_lat:.2f}ms")
             return {
                 "query": query,
                 "answer": input_err,
@@ -98,6 +99,7 @@ class RAGService:
         is_conv, conv_ans = self.query_intent_guard.evaluate(query, language_code=effective_lang)
         if is_conv:
             total_lat = (time.perf_counter() - start_total) * 1000.0
+            print(f"[PERF] language={effective_lang} intent=conversational embedding=0.00ms faiss=0.00ms bm25=0.00ms fusion=0.00ms validation=0.00ms groq=0.00ms grounding=0.00ms total={total_lat:.2f}ms")
             return {
                 "query": query,
                 "answer": conv_ans,
@@ -121,13 +123,15 @@ class RAGService:
         t0 = time.perf_counter()
         retrieval_res = self.retrieval_service.retrieve(query=query.strip(), language_code=effective_lang)
         t_retrieval = (time.perf_counter() - t0) * 1000.0
+        lat_bd = retrieval_res.get("latency_breakdown", {})
 
         raw_chunks = retrieval_res.get("results", [])
 
-        # 3. Retrieval Confidence Check
-        sufficient, top_score, ref_msg = self.retrieval_guardrail.evaluate(raw_chunks)
+        # 3. Retrieval Confidence Check (Language-Aware Localized Refusal Fast Path)
+        sufficient, top_score, ref_msg = self.retrieval_guardrail.evaluate(raw_chunks, query=query, language_code=effective_lang)
         if not sufficient:
             total_lat = (time.perf_counter() - start_total) * 1000.0
+            print(f"[PERF] language={effective_lang} intent=insufficient_evidence_refusal embedding={lat_bd.get('embedding_ms',0.0):.2f}ms faiss={lat_bd.get('faiss_ms',0.0):.2f}ms bm25={lat_bd.get('bm25_ms',0.0):.2f}ms fusion={lat_bd.get('fusion_ms',0.0):.2f}ms validation=0.00ms groq=0.00ms grounding=0.00ms total={total_lat:.2f}ms")
             return {
                 "query": query,
                 "answer": ref_msg,
@@ -170,6 +174,7 @@ class RAGService:
         valid_out, out_err = self.output_guardrail.validate(raw_answer)
         if not valid_out:
             total_lat = (time.perf_counter() - start_total) * 1000.0
+            print(f"[PERF] language={effective_lang} intent=output_error embedding={lat_bd.get('embedding_ms',0.0):.2f}ms faiss={lat_bd.get('faiss_ms',0.0):.2f}ms bm25={lat_bd.get('bm25_ms',0.0):.2f}ms fusion={lat_bd.get('fusion_ms',0.0):.2f}ms validation=0.00ms groq={t_llm:.2f}ms grounding=0.00ms total={total_lat:.2f}ms")
             return {
                 "query": query,
                 "answer": f"Refused: {out_err}",
@@ -199,13 +204,15 @@ class RAGService:
             for c in clean_chunks[:5]:
                 formatted_sources.append({
                     "chunk_id": c["chunk_id"],
-                    "language": c.get("language") or retrieval_res.get("language", "hi"),
+                    "language": c.get("language", "en"),
                     "query_id": c.get("query_id", 0),
                     "score": round(float(c.get("score", 0.0)), 4),
                     "text": c["text"],
                     "source_lang": c.get("source_lang", "eng_Latn"),
-                    "target_lang": c.get("target_lang", "hin_Deva")
+                    "target_lang": c.get("target_lang", None)
                 })
+
+        print(f"[PERF] language={effective_lang} intent=grounded_rag embedding={lat_bd.get('embedding_ms',0.0):.2f}ms faiss={lat_bd.get('faiss_ms',0.0):.2f}ms bm25={lat_bd.get('bm25_ms',0.0):.2f}ms fusion={lat_bd.get('fusion_ms',0.0):.2f}ms validation=0.00ms groq={t_llm:.2f}ms grounding={t_grounding:.2f}ms total={total_lat:.2f}ms")
 
         return {
             "query": query,

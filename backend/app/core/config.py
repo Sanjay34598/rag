@@ -24,11 +24,12 @@ class Settings:
     
     # Dataset & Index Paths
     INDEXES_DIR: Path = DATA_DIR / "indexes"
+    CANONICAL_INDEX_DIR: Path = DATA_DIR / "indexes" / "canonical"
     DATASET_PATH: str = os.getenv("DATASET_PATH", str(DATA_DIR / "sample_hinval.parquet"))
-    PROCESSED_CHUNKS_PATH: str = os.getenv("PROCESSED_CHUNKS_PATH", str(DATA_DIR / "processed_chunks.json"))
-    FAISS_INDEX_PATH: str = os.getenv("FAISS_INDEX_PATH", str(DATA_DIR / "faiss_index.bin"))
-    FAISS_METADATA_PATH: str = os.getenv("FAISS_METADATA_PATH", str(DATA_DIR / "faiss_metadata.json"))
-    BM25_INDEX_PATH: str = os.getenv("BM25_INDEX_PATH", str(DATA_DIR / "bm25_index.pkl"))
+    PROCESSED_CHUNKS_PATH: str = os.getenv("PROCESSED_CHUNKS_PATH", str(CANONICAL_INDEX_DIR / "processed_chunks.json"))
+    FAISS_INDEX_PATH: str = os.getenv("FAISS_INDEX_PATH", str(CANONICAL_INDEX_DIR / "faiss_index.bin"))
+    FAISS_METADATA_PATH: str = os.getenv("FAISS_METADATA_PATH", str(CANONICAL_INDEX_DIR / "faiss_metadata.json"))
+    BM25_INDEX_PATH: str = os.getenv("BM25_INDEX_PATH", str(CANONICAL_INDEX_DIR / "bm25_index.pkl"))
     
     # Retrieval Configuration
     EMBEDDING_MODEL: str = os.getenv("EMBEDDING_MODEL", "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2")

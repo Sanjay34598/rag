@@ -500,7 +500,10 @@ export default function App() {
                   <h3 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">
                     Answer
                   </h3>
-                  <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] font-mono text-zinc-400 bg-zinc-950 px-2 py-0.5 rounded border border-zinc-800">
+                      Response Language: {getLanguageDisplayLabel(result.language_code)}
+                    </span>
                     {result.grounded ? (
                       <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-950/60 border border-emerald-800 text-emerald-400 text-xs font-medium">
                         <CheckCircle2 className="w-3.5 h-3.5" /> Grounded
@@ -535,7 +538,7 @@ export default function App() {
                   <div className="pt-4 border-t border-zinc-800 space-y-1">
                     <div className="flex items-center justify-between text-xs text-zinc-500">
                       <span className="font-medium text-zinc-400">Recognized speech</span>
-                      <span className="font-mono">Language: {getLanguageDisplayLabel(result.language_code)}</span>
+                      <span className="font-mono">Speech Language: {getLanguageDisplayLabel(result.language_code)}</span>
                     </div>
                     <p className="text-sm sm:text-base font-medium text-zinc-200 hindi-text pt-0.5">
                       "{result.transcript}"
@@ -551,18 +554,15 @@ export default function App() {
                 <div className="flex items-center justify-between border-b border-zinc-800 pb-2.5">
                   <div>
                     <h4 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">
-                      Sources ({result.sources?.length || 0})
+                      Canonical Sources ({result.sources?.length || 0})
                     </h4>
                     <p className="text-[11px] text-zinc-500">
-                      Original retrieved evidence
+                      Original retrieved MSMARCO-XI dataset evidence
                     </p>
                   </div>
                   {result.sources && result.sources.length > 0 && (
                     <span className="text-[11px] font-mono text-zinc-400 bg-zinc-950 px-2 py-0.5 rounded border border-zinc-800">
-                      Language: {
-                        (result.sources[0]?.language === 'en' || result.language_code?.startsWith('en')) ? 'English' :
-                        (result.sources[0]?.language === 'te' || result.language_code?.startsWith('te')) ? 'Telugu' : 'Hindi'
-                      }
+                      Evidence Language: English
                     </span>
                   )}
                 </div>
@@ -577,10 +577,7 @@ export default function App() {
                           </span>
                           <div className="flex items-center gap-2 text-[11px]">
                             <span className="text-zinc-400 bg-zinc-900 px-2 py-0.5 rounded border border-zinc-800">
-                              Language: {
-                                (source.language === 'en' || source.language === 'en-IN') ? 'English' :
-                                (source.language === 'te' || source.language === 'te-IN') ? 'Telugu' : 'Hindi'
-                              }
+                              Evidence: {source.language === 'en' ? 'English' : source.language || 'English'}
                             </span>
                             <span>Relevance: {source.score}</span>
                           </div>
