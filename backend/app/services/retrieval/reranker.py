@@ -1,6 +1,5 @@
 import os
 from typing import List, Dict, Any
-from sentence_transformers import CrossEncoder
 from app.core.config import settings
 
 class RerankerService:
@@ -17,6 +16,7 @@ class RerankerService:
             return
         
         os.environ["USE_TF"] = "0"
+        from sentence_transformers import CrossEncoder
         self.model_name = model_name or settings.RERANKER_MODEL
         print(f"[RerankerService] Initializing cross-encoder model: {self.model_name}")
         self.model = CrossEncoder(self.model_name)

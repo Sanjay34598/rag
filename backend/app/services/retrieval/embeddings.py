@@ -3,10 +3,8 @@ os.environ["USE_TF"] = "0"
 os.environ["USE_TORCH"] = "1"
 os.environ["HF_HUB_DISABLE_SYMLINKS_WARNING"] = "1"
 
-import torch
 import numpy as np
 from typing import List, Union
-from sentence_transformers import SentenceTransformer
 from app.core.config import settings
 
 class EmbeddingService:
@@ -25,6 +23,9 @@ class EmbeddingService:
         os.environ["USE_TF"] = "0"
         os.environ["HF_HUB_DISABLE_SYMLINKS_WARNING"] = "1"
         
+        import torch
+        from sentence_transformers import SentenceTransformer
+
         self.model_name = model_name or settings.EMBEDDING_MODEL
         print(f"[EmbeddingService] Initializing embedding model: {self.model_name}")
         
@@ -41,6 +42,7 @@ class EmbeddingService:
         print(f"[EmbeddingService] Embedding model loaded and pre-warmed (CPU Threads: {num_threads}).")
 
     def encode(self, texts: Union[str, List[str]], normalize: bool = True, batch_size: int = 256, show_progress: bool = True) -> np.ndarray:
+        import torch
         if isinstance(texts, str):
             texts = [texts]
             

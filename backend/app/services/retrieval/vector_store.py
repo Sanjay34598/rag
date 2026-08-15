@@ -1,6 +1,5 @@
 import os
 import json
-import faiss
 import numpy as np
 from typing import List, Dict, Any, Tuple
 from app.core.config import settings
@@ -9,11 +8,12 @@ class FAISSVectorStore:
     def __init__(self, index_path: str = None, metadata_path: str = None):
         self.index_path = index_path or settings.FAISS_INDEX_PATH
         self.metadata_path = metadata_path or settings.FAISS_METADATA_PATH
-        self.index: faiss.Index = None
+        self.index: Any = None
         self.metadata: List[Dict[str, Any]] = []
         self._is_loaded = False
 
     def build_index(self, embeddings: np.ndarray, metadata: List[Dict[str, Any]]) -> None:
+        import faiss
         if len(embeddings) != len(metadata):
             raise ValueError(f"Embeddings count ({len(embeddings)}) must match metadata count ({len(metadata)})")
 
@@ -30,6 +30,7 @@ class FAISSVectorStore:
         self._is_loaded = True
 
     def save(self) -> None:
+        import faiss
         if self.index is None:
             raise ValueError("Cannot save empty FAISS index.")
         
@@ -42,6 +43,7 @@ class FAISSVectorStore:
         print(f"[FAISSVectorStore] Index saved to {self.index_path} ({self.index.ntotal} vectors)")
 
     def load(self) -> bool:
+        import faiss
         if not os.path.exists(self.index_path) or not os.path.exists(self.metadata_path):
             print(f"[FAISSVectorStore] Index or metadata missing at {self.index_path}")
             return False
@@ -58,6 +60,7 @@ class FAISSVectorStore:
             return False
 
     def search(self, query_vector: np.ndarray, top_k: int = 20) -> List[Dict[str, Any]]:
+        import faiss
         if not self._is_loaded or self.index is None:
             raise RuntimeError("FAISS index is not loaded.")
         

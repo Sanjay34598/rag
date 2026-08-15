@@ -19,32 +19,33 @@ if hasattr(sys.stderr, "reconfigure"):
     except Exception:
         pass
 
-def _sync_initialize_rag():
+print("[BOOT] main.py imported")
+
+async def initialize_rag_background():
     try:
         service = get_rag_service()
-        service.initialize(load_indexes=True)
+        await asyncio.to_thread(service.initialize, load_indexes=True)
     except Exception as e:
-        print(f"[{settings.PROJECT_NAME}] Warning during background RAG model loading: {e}")
-
-async def _bg_initialize_rag():
-    loop = asyncio.get_running_loop()
-    await loop.run_in_executor(None, _sync_initialize_rag)
+        print(f"[RAG INIT FAILED] {e}")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    print("[STARTUP] FastAPI application starting")
-    print(f"[{settings.PROJECT_NAME}] Pre-loading RAG & retrieval models asynchronously...")
-    init_task = asyncio.create_task(_bg_initialize_rag())
+    print("[STARTUP] lifespan entered")
+    print("[STARTUP] scheduling background RAG initialization")
+    asyncio.create_task(initialize_rag_background())
+    print("[STARTUP] yielding control to Uvicorn")
     print("[STARTUP] HTTP application ready")
     yield
-    print(f"[{settings.PROJECT_NAME}] Shutting down...")
+    print("[SHUTDOWN] Application shutting down")
 
+print("[BOOT] FastAPI app creation started")
 app = FastAPI(
     title=settings.PROJECT_NAME,
     version=settings.VERSION,
     openapi_url=f"{settings.API_V1_STR}/openapi.json",
     lifespan=lifespan
 )
+print("[BOOT] FastAPI app created")
 
 cors_origins = [o.strip() for o in settings.ALLOWED_ORIGINS.split(",") if o.strip()]
 if not cors_origins:

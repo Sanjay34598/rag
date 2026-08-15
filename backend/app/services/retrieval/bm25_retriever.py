@@ -2,7 +2,6 @@ import os
 import re
 import pickle
 from typing import List, Dict, Any
-from rank_bm25 import BM25Okapi
 from app.core.config import settings
 
 def tokenize_text(text: str) -> List[str]:
@@ -19,12 +18,13 @@ def tokenize_text(text: str) -> List[str]:
 class BM25Retriever:
     def __init__(self, index_path: str = None):
         self.index_path = index_path or settings.BM25_INDEX_PATH
-        self.bm25: BM25Okapi = None
+        self.bm25: Any = None
         self.metadata: List[Dict[str, Any]] = []
         self.corpus_tokens: List[List[str]] = []
         self._is_loaded = False
 
     def build_index(self, metadata: List[Dict[str, Any]]) -> None:
+        from rank_bm25 import BM25Okapi
         print(f"[BM25Retriever] Tokenizing {len(metadata)} chunks...")
         self.metadata = metadata
         self.corpus_tokens = [tokenize_text(m.get("text", "")) for m in metadata]
