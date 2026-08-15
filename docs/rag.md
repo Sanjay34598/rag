@@ -16,7 +16,7 @@ User Query
     ↓
 5. Context Builder & Prompt Builder
     ↓
-6. Answer Generator (Gemini API or Extracted Offline Fallback)
+6. Answer Generator (Groq API or Extracted Offline Fallback)
     ↓
 7. Output Guardrail (Content safety & refusal filter)
     ↓
@@ -26,8 +26,8 @@ Final RAG Response Output
 ```
 
 ## LLM Configuration & Modes
-- **Configured Provider**: `gemini`
-- **Configured Model**: `gemini-1.5-flash`
+- **Configured Provider**: `groq`
+- **Configured Model**: `llama-3.1-8b-instant`
 - **Current Mode**: `fallback` (No external API key set in current local environment)
 - **Status Flag**: `REAL_LLM_CONFIGURATION = NOT AVAILABLE`
 

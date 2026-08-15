@@ -65,7 +65,7 @@ cp .env.example .env
 ```
 Key settings:
 - `SARVAM_API_KEY`: Your Sarvam AI STT subscription key.
-- `LLM_API_KEY`: Gemini / OpenAI / Groq API key (defaults to fallback if empty).
+- `GROQ_API_KEY`: Groq API key for llama-3.1-8b-instant answer generation.
 
 ### 4. Running Test Suites
 ```bash

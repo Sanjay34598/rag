@@ -15,8 +15,12 @@ interface LatencyBreakdown {
 
 interface SourceChunk {
   chunk_id: string
+  language?: string
+  query_id?: number
   score: number
   text: string
+  source_lang?: string
+  target_lang?: string
 }
 
 interface VoiceQueryResponse {
@@ -36,12 +40,20 @@ export default function App() {
   const [uiState, setUiState] = useState<UIState>('IDLE')
   const [recordingTime, setRecordingTime] = useState<number>(0)
   const [textQuery, setTextQuery] = useState<string>('')
+  const [selectedLang, setSelectedLang] = useState<string>('unknown')
   const [result, setResult] = useState<VoiceQueryResponse | null>(null)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const audioChunksRef = useRef<Blob[]>([])
   const timerRef = useRef<number | null>(null)
+
+  const languageOptions = [
+    { code: 'unknown', label: 'Auto Detect' },
+    { code: 'hi-IN', label: 'Hindi (hi-IN)' },
+    { code: 'en-IN', label: 'English (en-IN)' },
+    { code: 'te-IN', label: 'Telugu (te-IN)' }
+  ]
 
   useEffect(() => {
     return () => {
@@ -67,7 +79,6 @@ export default function App() {
 
   const startRecording = async () => {
     setErrorMsg(null)
-    setResult(null)
     audioChunksRef.current = []
 
     try {
@@ -120,10 +131,16 @@ export default function App() {
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
       mediaRecorderRef.current.stop()
       setUiState('PROCESSING')
+      setResult(null)
+      setErrorMsg(null)
     }
   }
 
   const submitVoiceQuery = async (audioBlob: Blob, mimeType: string) => {
+    setResult(null)
+    setErrorMsg(null)
+    setUiState('PROCESSING')
+
     if (!audioBlob || audioBlob.size === 0) {
       setErrorMsg('No audio recorded. Please try speaking again.')
       setUiState('ERROR')
@@ -140,6 +157,10 @@ export default function App() {
     const formData = new FormData()
     const filename = `recording.${extension}`
     formData.append('file', audioBlob, filename)
+    if (selectedLang && selectedLang !== 'unknown') {
+      formData.append('language_code', selectedLang)
+      formData.append('language', selectedLang)
+    }
 
     try {
       let res: Response
@@ -190,12 +211,19 @@ export default function App() {
     }
   }
 
-  const runTextQuery = async (queryToRun: string) => {
+  const runTextQuery = async (queryToRun: string, targetLangOverride?: string) => {
     if (!queryToRun.trim()) return
 
     setUiState('PROCESSING')
     setErrorMsg(null)
     setResult(null)
+
+    const langToUse = targetLangOverride || selectedLang
+    const reqBody: any = { query: queryToRun }
+    if (langToUse && langToUse !== 'unknown') {
+      reqBody.language_code = langToUse
+      reqBody.language = langToUse
+    }
 
     try {
       let res: Response
@@ -203,13 +231,13 @@ export default function App() {
         res = await fetch('/api/v1/rag/query', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ query: queryToRun }),
+          body: JSON.stringify(reqBody),
         })
       } catch (networkErr: any) {
         res = await fetch('http://127.0.0.1:8000/api/v1/rag/query', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ query: queryToRun }),
+          body: JSON.stringify(reqBody),
         })
       }
 
@@ -237,6 +265,7 @@ export default function App() {
 
       setResult({
         transcript: queryToRun,
+        language_code: data.language_code || (langToUse !== 'unknown' ? langToUse : 'hi-IN'),
         answer: data.answer,
         grounded: data.grounded,
         confidence: data.confidence,
@@ -267,9 +296,12 @@ export default function App() {
     runTextQuery(textQuery)
   }
 
-  const handleSampleClick = (sampleQuery: string) => {
+  const handleSampleClick = (sampleQuery: string, sampleLang?: string) => {
     setTextQuery(sampleQuery)
-    runTextQuery(sampleQuery)
+    if (sampleLang) {
+      setSelectedLang(sampleLang)
+    }
+    runTextQuery(sampleQuery, sampleLang)
   }
 
   const resetDemo = () => {
@@ -287,10 +319,17 @@ export default function App() {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
   }
 
+  const getLanguageDisplayLabel = (code?: string) => {
+    if (code === 'hi-IN') return 'Hindi (hi-IN)'
+    if (code === 'en-IN') return 'English (en-IN)'
+    if (code === 'te-IN') return 'Telugu (te-IN)'
+    return code || 'Auto Detected'
+  }
+
   const sampleQueries = [
-    "कॉर्पोरेशन क्या है?",
-    "ईमानदारी की परिभाषा",
-    "वायुमंडलीय दबाव की परिभाषा"
+    { text: "कॉर्पोरेशन क्या है?", lang: "hi-IN", label: "Hindi: Corporation" },
+    { text: "What is a corporation?", lang: "en-IN", label: "English: Corporation" },
+    { text: "కార్పొరేషన్ అంటే ఏమిటి?", lang: "te-IN", label: "Telugu: Corporation" }
   ]
 
   return (
@@ -306,7 +345,7 @@ export default function App() {
               Voice RAG
             </h1>
             <p className="text-xs text-zinc-400 mt-0.5">
-              Hindi knowledge assistant
+              Multilingual knowledge assistant (Hindi • English • Telugu)
             </p>
           </div>
 
@@ -328,13 +367,32 @@ export default function App() {
             
             {/* 1. ASK A QUESTION */}
             <section className="bg-zinc-900 border border-zinc-800 rounded-lg p-5 space-y-4">
-              <div>
-                <h2 className="text-lg font-semibold tracking-tight text-zinc-100">
-                  Ask a question
-                </h2>
-                <p className="text-xs text-zinc-400 mt-0.5">
-                  Search trusted knowledge using text or your voice.
-                </p>
+              <div className="flex items-center justify-between gap-2">
+                <div>
+                  <h2 className="text-lg font-semibold tracking-tight text-zinc-100">
+                    Ask a question
+                  </h2>
+                  <p className="text-xs text-zinc-400 mt-0.5">
+                    Search trusted knowledge using text or your voice.
+                  </p>
+                </div>
+
+                {/* Professional Language Selector */}
+                <div className="flex items-center gap-1.5 bg-zinc-950 border border-zinc-800 rounded-md px-2.5 py-1 text-xs">
+                  <span className="text-zinc-500 font-medium hidden sm:inline">Language:</span>
+                  <select
+                    value={selectedLang}
+                    onChange={(e) => setSelectedLang(e.target.value)}
+                    aria-label="Select target language"
+                    className="bg-transparent text-zinc-200 focus:outline-none cursor-pointer font-medium text-xs"
+                  >
+                    {languageOptions.map((opt) => (
+                      <option key={opt.code} value={opt.code} className="bg-zinc-900 text-zinc-200">
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
 
               {/* Integrated Search Input + Buttons */}
@@ -344,7 +402,7 @@ export default function App() {
                   value={textQuery}
                   onChange={(e) => setTextQuery(e.target.value)}
                   disabled={uiState === 'RECORDING' || uiState === 'PROCESSING'}
-                  placeholder="Type your question in Hindi..."
+                  placeholder="Type your question in Hindi, English, or Telugu..."
                   className="w-full bg-transparent px-4 py-3 text-sm sm:text-base text-zinc-100 placeholder-zinc-500 focus:outline-none disabled:opacity-50 hindi-text flex-1"
                 />
 
@@ -364,9 +422,9 @@ export default function App() {
                       type="button"
                       onClick={startRecording}
                       disabled={uiState === 'PROCESSING'}
-                      aria-label="Microphone input - speak in Hindi"
+                      aria-label="Microphone input - speak in your language"
                       className="p-2 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 rounded transition disabled:opacity-50 cursor-pointer"
-                      title="Click to speak in Hindi"
+                      title="Click to speak"
                     >
                       <Mic className="w-4 h-4" />
                     </button>
@@ -388,7 +446,7 @@ export default function App() {
                   <div className="flex items-center gap-2">
                     <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
                     <span className="font-medium">Listening active ({formatTime(recordingTime)})</span>
-                    <span className="hidden sm:inline text-red-300">— Speak your question in Hindi</span>
+                    <span className="hidden sm:inline text-red-300">— Speak your question in {selectedLang === 'unknown' ? 'your language' : getLanguageDisplayLabel(selectedLang)}</span>
                   </div>
                   <button
                     onClick={stopRecording}
@@ -403,7 +461,7 @@ export default function App() {
               {uiState === 'PROCESSING' && (
                 <div className="p-3 bg-zinc-950 border border-zinc-800 rounded flex items-center gap-2 text-xs text-zinc-400">
                   <Loader2 className="w-4 h-4 animate-spin text-zinc-100" />
-                  <span>Searching knowledge base...</span>
+                  <span>Searching trusted knowledge...</span>
                 </div>
               )}
 
@@ -414,10 +472,10 @@ export default function App() {
                   {sampleQueries.map((sample, idx) => (
                     <button
                       key={idx}
-                      onClick={() => handleSampleClick(sample)}
+                      onClick={() => handleSampleClick(sample.text, sample.lang)}
                       className="px-2.5 py-1 bg-zinc-950 hover:bg-zinc-800 border border-zinc-800 rounded text-zinc-300 hover:text-white transition cursor-pointer hindi-text"
                     >
-                      {sample}
+                      {sample.label}: "{sample.text}"
                     </button>
                   ))}
                 </div>
@@ -477,7 +535,7 @@ export default function App() {
                   <div className="pt-4 border-t border-zinc-800 space-y-1">
                     <div className="flex items-center justify-between text-xs text-zinc-500">
                       <span className="font-medium text-zinc-400">Recognized speech</span>
-                      <span className="font-mono">Language: Hindi (hi-IN)</span>
+                      <span className="font-mono">Language: {getLanguageDisplayLabel(result.language_code)}</span>
                     </div>
                     <p className="text-sm sm:text-base font-medium text-zinc-200 hindi-text pt-0.5">
                       "{result.transcript}"
@@ -488,24 +546,54 @@ export default function App() {
             )}
 
             {/* 3. SOURCES */}
-            {result && result.sources && result.sources.length > 0 && (
+            {result && (
               <section className="bg-zinc-900 border border-zinc-800 rounded-lg p-5 space-y-3">
-                <h4 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">
-                  Sources ({result.sources.length})
-                </h4>
-                <div className="space-y-2.5">
-                  {result.sources.map((source, idx) => (
-                    <div key={idx} className="p-3.5 bg-zinc-950 border border-zinc-800/80 rounded space-y-1 text-xs">
-                      <div className="flex items-center justify-between font-mono text-zinc-500">
-                        <span className="font-semibold text-zinc-300">
-                          {String(idx + 1).padStart(2, '0')} &nbsp; Source • {source.chunk_id}
-                        </span>
-                        <span>Relevance: {source.score}</span>
-                      </div>
-                      <p className="text-xs sm:text-sm text-zinc-400 leading-relaxed hindi-text pt-1">{source.text}</p>
-                    </div>
-                  ))}
+                <div className="flex items-center justify-between border-b border-zinc-800 pb-2.5">
+                  <div>
+                    <h4 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">
+                      Sources ({result.sources?.length || 0})
+                    </h4>
+                    <p className="text-[11px] text-zinc-500">
+                      Original retrieved evidence
+                    </p>
+                  </div>
+                  {result.sources && result.sources.length > 0 && (
+                    <span className="text-[11px] font-mono text-zinc-400 bg-zinc-950 px-2 py-0.5 rounded border border-zinc-800">
+                      Language: {
+                        (result.sources[0]?.language === 'en' || result.language_code?.startsWith('en')) ? 'English' :
+                        (result.sources[0]?.language === 'te' || result.language_code?.startsWith('te')) ? 'Telugu' : 'Hindi'
+                      }
+                    </span>
+                  )}
                 </div>
+
+                {result.sources && result.sources.length > 0 ? (
+                  <div className="space-y-2.5">
+                    {result.sources.map((source, idx) => (
+                      <div key={idx} className="p-3.5 bg-zinc-950 border border-zinc-800/80 rounded space-y-1.5 text-xs">
+                        <div className="flex items-center justify-between font-mono text-zinc-500">
+                          <span className="font-semibold text-zinc-300">
+                            {String(idx + 1).padStart(2, '0')} &nbsp; Source • {source.chunk_id}
+                          </span>
+                          <div className="flex items-center gap-2 text-[11px]">
+                            <span className="text-zinc-400 bg-zinc-900 px-2 py-0.5 rounded border border-zinc-800">
+                              Language: {
+                                (source.language === 'en' || source.language === 'en-IN') ? 'English' :
+                                (source.language === 'te' || source.language === 'te-IN') ? 'Telugu' : 'Hindi'
+                              }
+                            </span>
+                            <span>Relevance: {source.score}</span>
+                          </div>
+                        </div>
+                        <p className="text-xs sm:text-sm text-zinc-400 leading-relaxed hindi-text pt-1">{source.text}</p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="p-3.5 bg-zinc-950 border border-zinc-800/80 rounded text-xs text-zinc-400">
+                    No verified sources available.
+                  </div>
+                )}
               </section>
             )}
 
@@ -523,7 +611,7 @@ export default function App() {
                   Voice Search
                 </h3>
                 <p className="text-xs text-zinc-400 mt-0.5">
-                  Click the microphone and speak your question in Hindi.
+                  Click the microphone and speak your question in Hindi, English, or Telugu.
                 </p>
               </div>
 
@@ -538,7 +626,7 @@ export default function App() {
               ) : uiState === 'PROCESSING' ? (
                 <div className="w-full bg-zinc-950 border border-zinc-800 text-zinc-400 py-2.5 px-4 rounded text-xs font-medium flex items-center justify-center gap-2">
                   <Loader2 className="w-3.5 h-3.5 animate-spin text-zinc-100" />
-                  <span>Processing voice query...</span>
+                  <span>Searching trusted knowledge...</span>
                 </div>
               ) : (
                 <button
@@ -566,7 +654,7 @@ export default function App() {
                     <span className="font-semibold text-zinc-200">{result.latency.retrieval_ms} ms</span>
                   </div>
                   <div className="flex items-center justify-between text-zinc-400">
-                    <span>Gemini</span>
+                    <span>Groq</span>
                     <span className="font-semibold text-zinc-200">{result.latency.llm_ms} ms</span>
                   </div>
                   <div className="flex items-center justify-between text-zinc-400 pt-1.5 border-t border-zinc-800/60">
@@ -593,15 +681,21 @@ export default function App() {
                 </div>
                 <div className="flex items-center justify-between border-b border-zinc-800/50 pb-1.5">
                   <span className="text-zinc-500">LLM</span>
-                  <span className="font-mono text-zinc-200">Gemini 2.5 Flash</span>
+                  <span className="font-mono text-zinc-200">Groq llama-3.1-8b-instant</span>
                 </div>
                 <div className="flex items-center justify-between border-b border-zinc-800/50 pb-1.5">
                   <span className="text-zinc-500">STT Service</span>
                   <span className="font-mono text-zinc-200">Sarvam saaras:v3</span>
                 </div>
+                <div className="flex items-center justify-between border-b border-zinc-800/50 pb-1.5">
+                  <span className="text-zinc-500">Supported Languages</span>
+                  <span className="font-mono text-zinc-200">hi-IN, en-IN, te-IN</span>
+                </div>
                 <div className="flex items-center justify-between">
                   <span className="text-zinc-500">Retrieved sources</span>
-                  <span className="font-mono text-zinc-200">5 Chunks</span>
+                  <span className="font-mono text-zinc-200">
+                    {result ? `${result.sources?.length || 0} Chunks` : "0 Chunks"}
+                  </span>
                 </div>
               </div>
             </section>
@@ -614,11 +708,11 @@ export default function App() {
               <ul className="space-y-2 text-xs text-zinc-400">
                 <li className="flex items-start gap-2">
                   <span className="text-emerald-400 shrink-0 font-bold">✓</span>
-                  <span>Speak clearly in Hindi for best speech recognition.</span>
+                  <span>Select Hindi, English, Telugu, or Auto Detect before recording.</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-emerald-400 shrink-0 font-bold">✓</span>
-                  <span>You can type directly or use the microphone.</span>
+                  <span>Answers match your question's language automatically.</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-emerald-400 shrink-0 font-bold">✓</span>
@@ -626,7 +720,7 @@ export default function App() {
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-emerald-400 shrink-0 font-bold">✓</span>
-                  <span>If an answer cannot be verified, the system will inform you.</span>
+                  <span>Conversational phrases are safely answered without triggering false RAG.</span>
                 </li>
               </ul>
             </section>
@@ -648,8 +742,8 @@ export default function App() {
 
         {/* FOOTER */}
         <footer className="pt-6 border-t border-zinc-800 text-center sm:text-left text-xs text-zinc-500 flex flex-col sm:flex-row items-center justify-between gap-2">
-          <span>Voice RAG • Production Knowledge System</span>
-          <span className="font-mono text-[11px]">Sarvam STT • FAISS/BM25 • Gemini 2.5 Flash</span>
+          <span>Voice RAG • Multilingual Production Knowledge System</span>
+          <span className="font-mono text-[11px]">Sarvam STT (hi-IN / en-IN / te-IN) • FAISS/BM25 • Groq llama-3.1-8b-instant</span>
         </footer>
 
       </div>

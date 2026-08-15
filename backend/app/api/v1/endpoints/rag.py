@@ -1,12 +1,14 @@
 from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel, Field
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from app.services.rag.rag_service import get_rag_service
 
 router = APIRouter()
 
 class RAGQueryRequest(BaseModel):
     query: str = Field(..., description="User search query", example="kya vitamin b ka atyadhik sevan hanikarak hai?")
+    language_code: Optional[str] = Field(None, description="Optional target language: hi-IN, en-IN, te-IN, unknown")
+    language: Optional[str] = Field(None, description="Alternative field for language code")
 
 class RAGSource(BaseModel):
     chunk_id: str
@@ -27,6 +29,7 @@ class RAGQueryResponse(BaseModel):
     confidence: float
     sources: List[RAGSource]
     latency: RAGLatency
+    language_code: Optional[str] = "hi-IN"
 
 @router.post("/query", response_model=RAGQueryResponse, summary="Perform Grounded RAG Query")
 def rag_query_endpoint(request: RAGQueryRequest):
@@ -36,12 +39,15 @@ def rag_query_endpoint(request: RAGQueryRequest):
             detail="Query string cannot be empty or whitespace-only."
         )
 
+    target_lang = request.language_code or request.language
     try:
         service = get_rag_service()
-        response_data = service.answer(query=request.query.strip())
+        response_data = service.answer(query=request.query.strip(), language_code=target_lang)
         return response_data
     except Exception as e:
+        safe_err = str(e).encode("utf-8", errors="replace").decode("utf-8")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"RAG execution error: {str(e)}"
+            detail=f"RAG execution error: {safe_err}"
         )
+

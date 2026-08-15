@@ -1,4 +1,4 @@
-from fastapi import APIRouter, File, UploadFile, HTTPException, status
+from fastapi import APIRouter, File, UploadFile, Form, HTTPException, status
 from pydantic import BaseModel
 from typing import Optional
 from app.services.stt.sarvam_stt import get_stt_service
@@ -42,7 +42,10 @@ def validate_audio_file(file: UploadFile, content_bytes: bytes):
         )
 
 @router.post("/transcribe", response_model=STTTranscribeResponse)
-async def transcribe_audio(file: UploadFile = File(...)):
+async def transcribe_audio(
+    file: UploadFile = File(...),
+    language_code: Optional[str] = Form(None)
+):
     """
     Transcribe audio file using Sarvam Speech-to-Text API.
     """
@@ -53,7 +56,12 @@ async def transcribe_audio(file: UploadFile = File(...)):
     filename = file.filename or "audio.wav"
     mime_type = file.content_type or "audio/wav"
 
-    success, result, latency_ms = stt_service.transcribe(content_bytes, filename, mime_type)
+    success, result, latency_ms = stt_service.transcribe(
+        audio_bytes=content_bytes,
+        filename=filename,
+        mime_type=mime_type,
+        language_code=language_code
+    )
 
     if not success:
         error_msg = result.get("error", "Transcription failed.")

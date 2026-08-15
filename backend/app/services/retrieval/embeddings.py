@@ -1,4 +1,8 @@
 import os
+os.environ["USE_TF"] = "0"
+os.environ["USE_TORCH"] = "1"
+os.environ["HF_HUB_DISABLE_SYMLINKS_WARNING"] = "1"
+
 import torch
 import numpy as np
 from typing import List, Union
@@ -32,6 +36,7 @@ class EmbeddingService:
         # Warmup pass to pre-allocate PyTorch CPU memory and initialize oneDNN threads
         with torch.inference_mode():
             self.model.encode(["नमस्ते दुनिया warmup"], show_progress_bar=False, convert_to_numpy=True, normalize_embeddings=True)
+        self._query_cache = {}
         self._initialized = True
         print(f"[EmbeddingService] Embedding model loaded and pre-warmed (CPU Threads: {num_threads}).")
 
@@ -50,7 +55,16 @@ class EmbeddingService:
         return embeddings.astype(np.float32)
 
     def encode_query(self, query: str, normalize: bool = True) -> np.ndarray:
-        return self.encode([query], normalize=normalize, show_progress=False)[0]
+        clean_q = query.strip().lower()
+        if clean_q in self._query_cache:
+            return self._query_cache[clean_q].copy()
+
+        vec = self.encode([query], normalize=normalize, show_progress=False)[0]
+        # Bounded cache to avoid memory leaks (max 256 items)
+        if len(self._query_cache) > 256:
+            self._query_cache.clear()
+        self._query_cache[clean_q] = vec
+        return vec
 
 def get_embedding_service() -> EmbeddingService:
     return EmbeddingService()

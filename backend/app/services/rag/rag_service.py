@@ -1,3 +1,4 @@
+import re
 import time
 from typing import Dict, Any, List, Optional
 from app.services.retrieval.retrieval_service import get_retrieval_service, RetrievalService
@@ -10,6 +11,18 @@ from app.services.rag.context_builder import ContextBuilder
 from app.services.rag.prompt_builder import PromptBuilder
 from app.services.rag.answer_generator import get_answer_generator, AnswerGenerator
 from app.services.rag.grounding_validator import GroundingValidator
+
+def detect_script_language(query: str) -> str:
+    if not query:
+        return "hi-IN"
+    # Telugu script range
+    if re.search(r'[\u0C00-\u0C7F]', query):
+        return "te-IN"
+    # Devanagari (Hindi) script range
+    if re.search(r'[\u0900-\u097F]', query):
+        return "hi-IN"
+    # Default Latin script to English
+    return "en-IN"
 
 class RAGService:
     _instance = None
@@ -43,8 +56,21 @@ class RAGService:
         self.answer_generator = get_answer_generator()
         print("[RAGService] Initialization complete.")
 
-    def answer(self, query: str) -> Dict[str, Any]:
+    def answer(self, query: str, language_code: str = None) -> Dict[str, Any]:
         start_total = time.perf_counter()
+        
+        # LANGUAGE PRIORITY RULES (Requirement 3):
+        # If explicit language selected: USE IT (do NOT run script detection).
+        # If Auto Detect / unknown / missing: RUN script detection on query text.
+        if language_code and language_code.strip().lower() not in ("unknown", "auto", "auto detect", "none"):
+            effective_lang = language_code.strip()
+        else:
+            effective_lang = detect_script_language(query)
+
+        try:
+            print(f"[RAGService] query='{query}', selected_lang='{language_code}', effective_lang='{effective_lang}'")
+        except Exception:
+            pass
         
         # 1. Input Guardrail
         t0 = time.perf_counter()
@@ -57,6 +83,7 @@ class RAGService:
                 "grounded": False,
                 "confidence": 0.0,
                 "sources": [],
+                "language_code": effective_lang,
                 "latency": {
                     "retrieval_ms": 0.0,
                     "context_ms": 0.0,
@@ -68,7 +95,7 @@ class RAGService:
         t_input = (time.perf_counter() - t0) * 1000.0
 
         # 1.5 Conversational Intent Check (BEFORE Retrieval)
-        is_conv, conv_ans = self.query_intent_guard.evaluate(query)
+        is_conv, conv_ans = self.query_intent_guard.evaluate(query, language_code=effective_lang)
         if is_conv:
             total_lat = (time.perf_counter() - start_total) * 1000.0
             return {
@@ -77,6 +104,7 @@ class RAGService:
                 "grounded": False,
                 "confidence": 0.0,
                 "sources": [],
+                "language_code": effective_lang,
                 "latency": {
                     "retrieval_ms": 0.0,
                     "context_ms": 0.0,
@@ -86,12 +114,12 @@ class RAGService:
                 }
             }
 
-        # 2. Retrieval Service
+        # 2. Retrieval Service (Language-Aware Retrieval)
         if self.retrieval_service is None:
             self.retrieval_service = get_retrieval_service()
             
         t0 = time.perf_counter()
-        retrieval_res = self.retrieval_service.retrieve(query=query.strip())
+        retrieval_res = self.retrieval_service.retrieve(query=query.strip(), language_code=effective_lang)
         t_retrieval = (time.perf_counter() - t0) * 1000.0
 
         raw_chunks = retrieval_res.get("results", [])
@@ -105,7 +133,8 @@ class RAGService:
                 "answer": ref_msg,
                 "grounded": False,
                 "confidence": round(top_score, 2),
-                "sources": raw_chunks[:3],
+                "sources": [],
+                "language_code": effective_lang,
                 "latency": {
                     "retrieval_ms": round(t_retrieval, 2),
                     "context_ms": 0.0,
@@ -122,15 +151,15 @@ class RAGService:
         # 5. Context Building
         context_str = self.context_builder.build_context(clean_chunks)
 
-        # 6. Prompt Construction
-        prompt_str = self.prompt_builder.build_prompt(query, context_str)
+        # 6. Prompt Construction (with multilingual target instruction)
+        prompt_str = self.prompt_builder.build_prompt(query, context_str, language_code=effective_lang)
         t_context = (time.perf_counter() - t0) * 1000.0
 
         # 7. LLM Call
         t0 = time.perf_counter()
         if self.answer_generator is None:
             self.answer_generator = get_answer_generator()
-        llm_res = self.answer_generator.generate(query, prompt_str, clean_chunks)
+        llm_res = self.answer_generator.generate(query, prompt_str, clean_chunks, language_code=effective_lang)
         t_llm = (time.perf_counter() - t0) * 1000.0
 
         raw_answer = llm_res.get("answer", "")
@@ -146,7 +175,8 @@ class RAGService:
                 "answer": f"Refused: {out_err}",
                 "grounded": False,
                 "confidence": 0.0,
-                "sources": clean_chunks[:3],
+                "sources": [],
+                "language_code": effective_lang,
                 "latency": {
                     "retrieval_ms": round(t_retrieval, 2),
                     "context_ms": round(t_context, 2),
@@ -158,19 +188,23 @@ class RAGService:
 
         # 9. Grounding Validation
         t0 = time.perf_counter()
-        is_grounded, grounding_conf, final_answer = self.grounding_validator.validate(raw_answer, clean_chunks, query)
+        is_grounded, grounding_conf, final_answer = self.grounding_validator.validate(raw_answer, clean_chunks, query, language_code=effective_lang)
         t_grounding = (time.perf_counter() - t0) * 1000.0
 
         total_lat = (time.perf_counter() - start_total) * 1000.0
 
-        # Format sources
+        # Format sources with full metadata provenance
         formatted_sources = []
         if is_grounded:
             for c in clean_chunks[:5]:
                 formatted_sources.append({
                     "chunk_id": c["chunk_id"],
+                    "language": c.get("language") or retrieval_res.get("language", "hi"),
+                    "query_id": c.get("query_id", 0),
                     "score": round(float(c.get("score", 0.0)), 4),
-                    "text": c["text"]
+                    "text": c["text"],
+                    "source_lang": c.get("source_lang", "eng_Latn"),
+                    "target_lang": c.get("target_lang", "hin_Deva")
                 })
 
         return {
@@ -179,6 +213,7 @@ class RAGService:
             "grounded": is_grounded,
             "confidence": round(float(grounding_conf if is_grounded else 0.0), 2),
             "sources": formatted_sources,
+            "language_code": effective_lang,
             "latency": {
                 "retrieval_ms": round(t_retrieval, 2),
                 "context_ms": round(t_context, 2),

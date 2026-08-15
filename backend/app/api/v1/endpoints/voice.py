@@ -1,14 +1,12 @@
 import time
-from fastapi import APIRouter, File, UploadFile, HTTPException, status
+from fastapi import APIRouter, File, UploadFile, Form, HTTPException, status
 from pydantic import BaseModel
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from app.services.stt.sarvam_stt import get_stt_service
 from app.services.rag.rag_service import get_rag_service
 from app.api.v1.endpoints.stt import validate_audio_file
 
 router = APIRouter()
-
-from typing import List, Dict, Any, Optional
 
 class VoiceLatencyDetail(BaseModel):
     stt_ms: float
@@ -29,7 +27,11 @@ class VoiceQueryResponse(BaseModel):
     latency: VoiceLatencyDetail
 
 @router.post("/query", response_model=VoiceQueryResponse)
-async def voice_query(file: UploadFile = File(...)):
+async def voice_query(
+    file: UploadFile = File(...),
+    language_code: Optional[str] = Form(None),
+    language: Optional[str] = Form(None)
+):
     """
     Voice-enabled RAG Pipeline:
     Audio -> Sarvam STT -> Transcript -> Hybrid RAG -> Answer + Grounding -> Response
@@ -42,7 +44,14 @@ async def voice_query(file: UploadFile = File(...)):
     filename = file.filename or "audio.wav"
     mime_type = file.content_type or "audio/wav"
 
-    success, stt_res, stt_ms = stt_service.transcribe(content_bytes, filename, mime_type)
+    requested_lang = language_code or language
+
+    success, stt_res, stt_ms = stt_service.transcribe(
+        audio_bytes=content_bytes,
+        filename=filename,
+        mime_type=mime_type,
+        language_code=requested_lang
+    )
 
     if not success:
         error_msg = stt_res.get("error", "Speech-to-Text transcription failed.")
@@ -87,9 +96,11 @@ async def voice_query(file: UploadFile = File(...)):
             )
 
     transcript = stt_res["transcript"]
+    # User selected language overrides STT detected language for RAG output generation
+    effective_lang = requested_lang or stt_res.get("language_code") or "hi-IN"
 
     rag_service = get_rag_service()
-    rag_res = rag_service.answer(transcript)
+    rag_res = rag_service.answer(transcript, language_code=effective_lang)
 
     total_ms = (time.perf_counter() - total_start) * 1000.0
 
@@ -104,7 +115,7 @@ async def voice_query(file: UploadFile = File(...)):
 
     return VoiceQueryResponse(
         transcript=transcript,
-        language_code=stt_res.get("language_code", "hi-IN"),
+        language_code=effective_lang or "hi-IN",
         language_probability=stt_res.get("language_probability"),
         answer=rag_res["answer"],
         grounded=rag_res["grounded"],

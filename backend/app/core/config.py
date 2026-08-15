@@ -23,6 +23,7 @@ class Settings:
     API_V1_STR: str = "/api/v1"
     
     # Dataset & Index Paths
+    INDEXES_DIR: Path = DATA_DIR / "indexes"
     DATASET_PATH: str = os.getenv("DATASET_PATH", str(DATA_DIR / "sample_hinval.parquet"))
     PROCESSED_CHUNKS_PATH: str = os.getenv("PROCESSED_CHUNKS_PATH", str(DATA_DIR / "processed_chunks.json"))
     FAISS_INDEX_PATH: str = os.getenv("FAISS_INDEX_PATH", str(DATA_DIR / "faiss_index.bin"))
@@ -41,12 +42,13 @@ class Settings:
     RERANKER_MODEL: str = os.getenv("RERANKER_MODEL", "cross-encoder/ms-marco-MiniLM-L-6-v2")
     RERANKER_TOP_N: int = int(os.getenv("RERANKER_TOP_N", "5"))
 
-    # LLM Settings (Stage 4)
+    # LLM Settings (Groq Exclusive)
     LLM_MODE: str = os.getenv("LLM_MODE", "real").lower()  # "real" or "fallback"
-    LLM_PROVIDER: str = os.getenv("LLM_PROVIDER", "gemini")
-    LLM_MODEL: str = os.getenv("LLM_MODEL", "gemini-2.5-flash")
-    LLM_API_KEY: str = os.getenv("LLM_API_KEY", os.getenv("GEMINI_API_KEY", os.getenv("OPENAI_API_KEY", "")))
-    LLM_MAX_RETRIES: int = int(os.getenv("LLM_MAX_RETRIES", "2"))
+    LLM_PROVIDER: str = os.getenv("LLM_PROVIDER", "groq").lower()
+    LLM_MODEL: str = os.getenv("LLM_MODEL", "llama-3.1-8b-instant")
+    GROQ_API_KEY: str = os.getenv("GROQ_API_KEY", "")
+    LLM_API_KEY: str = os.getenv("GROQ_API_KEY", "")
+    LLM_MAX_RETRIES: int = int(os.getenv("LLM_MAX_RETRIES", "0"))
     LLM_TIMEOUT: float = float(os.getenv("LLM_TIMEOUT", "10.0"))
 
     # Guardrails Settings
@@ -63,3 +65,10 @@ class Settings:
     SARVAM_TIMEOUT: float = float(os.getenv("SARVAM_TIMEOUT", "15.0"))
 
 settings = Settings()
+
+if settings.LLM_PROVIDER != "groq":
+    raise ValueError("LLM_PROVIDER must be 'groq'. Gemini and other providers are completely disabled.")
+
+if settings.LLM_MODE == "real" and not settings.GROQ_API_KEY:
+    print("[WARNING] GROQ_API_KEY is not configured.")
+

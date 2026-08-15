@@ -15,7 +15,8 @@ class SarvamSTTService:
         self,
         audio_bytes: bytes,
         filename: str = "audio.wav",
-        mime_type: str = "audio/wav"
+        mime_type: str = "audio/wav",
+        language_code: str = None
     ) -> Tuple[bool, Dict[str, Any], float]:
         """
         Transcribe audio using Sarvam AI Speech-to-Text API.
@@ -46,10 +47,11 @@ class SarvamSTTService:
             "file": (filename, audio_bytes, clean_mime_type)
         }
 
+        target_lang = language_code if language_code and language_code.strip() else settings.SARVAM_LANGUAGE_CODE
         data = {
             "model": settings.SARVAM_STT_MODEL,
             "mode": settings.SARVAM_STT_MODE,
-            "language_code": settings.SARVAM_LANGUAGE_CODE
+            "language_code": target_lang
         }
 
         try:

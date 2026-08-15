@@ -1,9 +1,22 @@
+import sys
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.api.v1.api import api_router
 from app.services.rag.rag_service import get_rag_service
+
+# Safe UTF-8 initialization for stdout/stderr on Windows/CP1252
+if hasattr(sys.stdout, "reconfigure"):
+    try:
+        sys.stdout.reconfigure(encoding="utf-8")
+    except Exception:
+        pass
+if hasattr(sys.stderr, "reconfigure"):
+    try:
+        sys.stderr.reconfigure(encoding="utf-8")
+    except Exception:
+        pass
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):

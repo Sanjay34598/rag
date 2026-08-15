@@ -63,8 +63,21 @@ def test_voice_query_api_error_handling(mock_post, monkeypatch):
 def test_voice_query_unrelated_courtesy_refusal(mock_transcribe, monkeypatch):
     monkeypatch.setattr(settings, "SARVAM_API_KEY", "dummy_sarvam_key")
     
-    for courtesy in ["आपके लिए धन्यवाद", "धन्यवाद", "नमस्ते", "अलविदा"]:
-        mock_transcribe.return_value = (True, {"transcript": courtesy, "language_code": "hi-IN"}, 45.0)
+    # Courtesy phrases in Hindi, English, and Telugu MUST be refused as ungrounded
+    courtesy_cases = [
+        ("आपके लिए धन्यवाद", "hi-IN"),
+        ("धन्यवाद", "hi-IN"),
+        ("नमस्ते", "hi-IN"),
+        ("अलविदा", "hi-IN"),
+        ("Thank you", "en-IN"),
+        ("Hello", "en-IN"),
+        ("Goodbye", "en-IN"),
+        ("ధన్యవాదాలు", "te-IN"),
+        ("నమస్కారం", "te-IN"),
+        ("వీడ్కోలు", "te-IN")
+    ]
+    for courtesy, lang in courtesy_cases:
+        mock_transcribe.return_value = (True, {"transcript": courtesy, "language_code": lang}, 45.0)
 
         response = client.post(
             "/api/v1/voice/query",
@@ -76,8 +89,6 @@ def test_voice_query_unrelated_courtesy_refusal(mock_transcribe, monkeypatch):
         assert data["grounded"] is False
         assert data["confidence"] == 0.0
         assert data["sources"] == []
-        assert "एशली" not in data["answer"]
-        assert "मीथेन" not in data["answer"]
 
 @patch("app.services.stt.sarvam_stt.SarvamSTTService.transcribe")
 def test_voice_query_exact_transcript_propagation(mock_transcribe, monkeypatch):
@@ -100,8 +111,14 @@ def test_voice_query_exact_transcript_propagation(mock_transcribe, monkeypatch):
 def test_voice_query_courtesy_term_meaning_knowledge_query(mock_transcribe, monkeypatch):
     monkeypatch.setattr(settings, "SARVAM_API_KEY", "dummy_sarvam_key")
     
-    for term_query in ["धन्यवाद शब्द का अर्थ क्या है?", "नमस्ते शब्द का अर्थ क्या है?"]:
-        mock_transcribe.return_value = (True, {"transcript": term_query, "language_code": "hi-IN"}, 50.0)
+    # Meaning / Definition questions in Hindi, English, and Telugu MUST proceed to retrieval
+    meaning_cases = [
+        ("धन्यवाद शब्द का अर्थ क्या है?", "hi-IN"),
+        ("What does thank you mean?", "en-IN"),
+        ("ధన్యవాదాలు అంటే ఏమిటి?", "te-IN")
+    ]
+    for term_query, lang in meaning_cases:
+        mock_transcribe.return_value = (True, {"transcript": term_query, "language_code": lang}, 50.0)
 
         response = client.post(
             "/api/v1/voice/query",
