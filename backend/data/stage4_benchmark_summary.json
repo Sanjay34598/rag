@@ -1,0 +1,71 @@
+{
+  "num_indexed_chunks": 1500,
+  "num_eval_queries": 100,
+  "quality_metrics": {
+    "Dense Only (1.0/0.0)": {
+      "Recall@1": 0.1667,
+      "Recall@5": 0.6154,
+      "Recall@10": 0.7821,
+      "MRR@5": 0.3427,
+      "MRR@10": 0.3636
+    },
+    "BM25 Only (0.0/1.0)": {
+      "Recall@1": 0.2051,
+      "Recall@5": 0.6154,
+      "Recall@10": 0.7308,
+      "MRR@5": 0.3694,
+      "MRR@10": 0.3852
+    },
+    "Hybrid (0.9/0.1)": {
+      "Recall@1": 0.1923,
+      "Recall@5": 0.6282,
+      "Recall@10": 0.8333,
+      "MRR@5": 0.3641,
+      "MRR@10": 0.3903
+    },
+    "Hybrid (0.8/0.2)": {
+      "Recall@1": 0.2051,
+      "Recall@5": 0.6282,
+      "Recall@10": 0.8333,
+      "MRR@5": 0.3716,
+      "MRR@10": 0.4003
+    },
+    "Hybrid (0.7/0.3)": {
+      "Recall@1": 0.2051,
+      "Recall@5": 0.7051,
+      "Recall@10": 0.8205,
+      "MRR@5": 0.3902,
+      "MRR@10": 0.4056
+    },
+    "Hybrid (0.6/0.4)": {
+      "Recall@1": 0.2051,
+      "Recall@5": 0.7179,
+      "Recall@10": 0.8205,
+      "MRR@5": 0.3987,
+      "MRR@10": 0.4133
+    },
+    "Hybrid (0.7/0.3) + Reranker": {
+      "Recall@1": 0.12,
+      "Recall@5": 0.4,
+      "Recall@10": 0.56,
+      "MRR@5": 0.218,
+      "MRR@10": 0.2388
+    }
+  },
+  "hybrid_no_rerank_latency": {
+    "avg": 80.38,
+    "p50": 74.7,
+    "p70": 85.35,
+    "p100": 179.75,
+    "components_avg": {
+      "embedding": 69.63,
+      "faiss": 0.67,
+      "bm25": 9.88,
+      "fusion": 0.2
+    }
+  },
+  "hybrid_with_rerank_latency": {
+    "avg": 2113.77,
+    "rerank_only_avg": 2030.64
+  }
+}

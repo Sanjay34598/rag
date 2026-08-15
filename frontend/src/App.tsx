@@ -3,6 +3,7 @@ import {
   Mic, Square, Loader2, CheckCircle2, AlertCircle, 
   Search, FileText, Clock, Database, RefreshCw, ShieldCheck
 } from 'lucide-react'
+import { getApiEndpoint } from './config/api'
 
 interface LatencyBreakdown {
   stt_ms: number
@@ -164,16 +165,21 @@ export default function App() {
 
     try {
       let res: Response
+      const voiceEndpoint = getApiEndpoint('/api/v1/voice/query')
       try {
-        res = await fetch('/api/v1/voice/query', {
+        res = await fetch(voiceEndpoint, {
           method: 'POST',
           body: formData,
         })
       } catch (networkErr: any) {
-        res = await fetch('http://127.0.0.1:8000/api/v1/voice/query', {
-          method: 'POST',
-          body: formData,
-        })
+        if (voiceEndpoint.startsWith('/')) {
+          res = await fetch('http://127.0.0.1:8000/api/v1/voice/query', {
+            method: 'POST',
+            body: formData,
+          })
+        } else {
+          throw networkErr
+        }
       }
 
       const data = await res.json().catch(() => ({}))
@@ -227,18 +233,23 @@ export default function App() {
 
     try {
       let res: Response
+      const ragEndpoint = getApiEndpoint('/api/v1/rag/query')
       try {
-        res = await fetch('/api/v1/rag/query', {
+        res = await fetch(ragEndpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(reqBody),
         })
       } catch (networkErr: any) {
-        res = await fetch('http://127.0.0.1:8000/api/v1/rag/query', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(reqBody),
-        })
+        if (ragEndpoint.startsWith('/')) {
+          res = await fetch('http://127.0.0.1:8000/api/v1/rag/query', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(reqBody),
+          })
+        } else {
+          throw networkErr
+        }
       }
 
       const data = await res.json().catch(() => ({}))

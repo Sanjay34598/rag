@@ -1,0 +1,25 @@
+{
+  "configs": [
+    "default"
+  ],
+  "builder_name": "parquet",
+  "dataset_name": "msmarco-xi",
+  "description": "",
+  "features": {
+    "source_lang": "Value('string')",
+    "target_lang": "Value('string')",
+    "meta": "{'frequency_penalty': Value('int64'), 'max_tokens': Value('int64'), 'model_name': Value('string'), 'presence_penalty': Value('int64'), 'temperature': Value('int64'), 'top_p': Value('int64')}",
+    "Answer": "Value('string')",
+    "query_id": "Value('int64')",
+    "query_type": "Value('string')",
+    "passages": "{'English_passages': List(Value('string')), 'Translated_passages': List(Value('string')), 'is_selected': List(Value('int64'))}",
+    "Eng_Query": "Value('string')",
+    "Eng_Answer": "Value('string')",
+    "query": "Value('string')"
+  },
+  "splits": [
+    "train",
+    "validation"
+  ],
+  "streaming_error": ""
+}

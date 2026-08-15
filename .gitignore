@@ -1,5 +1,10 @@
-# Environments
+# Environments & Secrets
 .env
+.env.*
+!.env.example
+backend/.env
+frontend/.env
+backend/.venv/
 .venv/
 venv/
 ENV/
@@ -9,16 +14,22 @@ __pycache__/
 *.py[cod]
 *$py.class
 .pytest_cache/
+*.log
 
-# Frontend
+# Node & Build
+node_modules/
 frontend/node_modules/
 frontend/dist/
+dist/
+.vite/
 frontend/.vite/
 
-# Data and vector indices
-backend/data/*
-!backend/data/.gitkeep
+# Data & Indexes (Ignore raw parquet cache files, but NEVER ignore canonical index)
+backend/data/*.parquet
+!backend/data/indexes/canonical/
 
-# OS
+# IDE & OS
+.vscode/
+.idea/
 .DS_Store
 Thumbs.db
