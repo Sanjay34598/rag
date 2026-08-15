@@ -36,6 +36,13 @@ async def voice_query(
     Voice-enabled RAG Pipeline:
     Audio -> Sarvam STT -> Transcript -> Hybrid RAG -> Answer + Grounding -> Response
     """
+    rag_service = get_rag_service()
+    if not getattr(rag_service, "is_ready", False):
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="RAG system is still initializing. Please try again in a few seconds."
+        )
+
     total_start = time.perf_counter()
     content_bytes = await file.read()
     validate_audio_file(file, content_bytes)

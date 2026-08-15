@@ -37,6 +37,7 @@ class RAGService:
         if self._initialized:
             return
 
+        self.is_ready: bool = False
         self.input_guardrail = InputGuardrail()
         self.query_intent_guard = QueryIntentGuard()
         self.retrieval_guardrail = RetrievalGuardrail()
@@ -50,11 +51,11 @@ class RAGService:
         self._initialized = True
 
     def initialize(self, load_indexes: bool = True) -> None:
-        print("[RAGService] Initializing RAG pipeline components...")
         self.retrieval_service = get_retrieval_service()
         self.retrieval_service.initialize(load_indexes=load_indexes)
         self.answer_generator = get_answer_generator()
-        print("[RAGService] Initialization complete.")
+        self.is_ready = True
+        print("[RAG READY] Voice RAG is ready")
 
     def answer(self, query: str, language_code: str = None) -> Dict[str, Any]:
         start_total = time.perf_counter()

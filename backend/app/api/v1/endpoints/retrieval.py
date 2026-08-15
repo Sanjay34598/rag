@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel, Field
 from typing import List, Dict, Any
 from app.services.retrieval.retrieval_service import get_retrieval_service
+from app.services.rag.rag_service import get_rag_service
 
 router = APIRouter()
 
@@ -33,6 +34,13 @@ class RetrieveResponse(BaseModel):
 
 @router.post("/retrieve", response_model=RetrieveResponse, summary="Perform Hybrid Retrieval")
 def retrieve_endpoint(request: RetrieveRequest):
+    rag_service = get_rag_service()
+    if not getattr(rag_service, "is_ready", False):
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Retrieval service is still initializing. Please try again in a few seconds."
+        )
+
     if not request.query or not request.query.strip():
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

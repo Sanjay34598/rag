@@ -1,3 +1,4 @@
+import asyncio
 import sys
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
@@ -18,15 +19,23 @@ if hasattr(sys.stderr, "reconfigure"):
     except Exception:
         pass
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    print(f"[{settings.PROJECT_NAME}] Starting up...")
-    print(f"[{settings.PROJECT_NAME}] Pre-loading RAG & retrieval models & indexes...")
+def _sync_initialize_rag():
     try:
         service = get_rag_service()
         service.initialize(load_indexes=True)
     except Exception as e:
-        print(f"[{settings.PROJECT_NAME}] Warning during startup model loading: {e}")
+        print(f"[{settings.PROJECT_NAME}] Warning during background RAG model loading: {e}")
+
+async def _bg_initialize_rag():
+    loop = asyncio.get_running_loop()
+    await loop.run_in_executor(None, _sync_initialize_rag)
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    print("[STARTUP] FastAPI application starting")
+    print(f"[{settings.PROJECT_NAME}] Pre-loading RAG & retrieval models asynchronously...")
+    init_task = asyncio.create_task(_bg_initialize_rag())
+    print("[STARTUP] HTTP application ready")
     yield
     print(f"[{settings.PROJECT_NAME}] Shutting down...")
 
@@ -61,4 +70,9 @@ def root():
 
 @app.get("/health")
 def health():
-    return {"status": "ok", "version": settings.VERSION}
+    service = get_rag_service()
+    return {
+        "status": "ok",
+        "version": settings.VERSION,
+        "rag_ready": getattr(service, "is_ready", False)
+    }

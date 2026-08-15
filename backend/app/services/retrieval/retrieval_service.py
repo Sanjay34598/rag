@@ -69,7 +69,7 @@ class RetrievalService:
         self._initialized = True
 
     def initialize(self, load_indexes: bool = True) -> None:
-        print("[RetrievalService] Initializing pre-warmed canonical retrieval index...")
+        print("[RAG INIT] Loading SentenceTransformer...")
         self.embedding_service = get_embedding_service()
         self.query_alignment_service = get_query_alignment_service()
         self.query_alignment_service.initialize()
@@ -85,7 +85,11 @@ class RetrievalService:
 
         self.canonical_retriever = CanonicalRetriever(index_dir=canonical_dir)
         if load_indexes:
+            print("[RAG INIT] Loading canonical FAISS index...")
+            print("[RAG INIT] Loading canonical BM25 index...")
+            print("[RAG INIT] Loading processed chunks...")
             self.canonical_retriever.load()
+            print("[RAG INIT] Pre-warming complete")
             
         for l_key in ["en", "hi", "te", "canonical"]:
             self.retrievers[l_key] = self.canonical_retriever

@@ -34,6 +34,13 @@ class RAGQueryResponse(BaseModel):
 
 @router.post("/query", response_model=RAGQueryResponse, summary="Perform Grounded RAG Query")
 def rag_query_endpoint(request: RAGQueryRequest):
+    service = get_rag_service()
+    if not getattr(service, "is_ready", False):
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="RAG system is still initializing. Please try again in a few seconds."
+        )
+
     if not request.query or not request.query.strip():
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
