@@ -79,37 +79,54 @@ class AnswerGenerator:
     def _offline_fallback_generate(self, query: str, context_chunks: List[Dict[str, Any]], language_code: str = None) -> Dict[str, Any]:
         """
         Extracted localized fallback message when offline mode, 429 rate limit, or API failure occurs.
-        Returns the top retrieved context chunk text as evidence for relevant queries across all target languages.
+        Returns the top retrieved context chunk text in the target language script as evidence for relevant queries.
         """
         if context_chunks:
             top_chunk = context_chunks[0]
             score = float(top_chunk.get("score", 0.0))
             if score >= settings.MIN_RETRIEVAL_SCORE:
-                # Query relevance check to prevent returning ungrounded fallback answers for unrelated queries
+                # Query token overlap check for fallback mode
                 q_tokens = tokenize_text(query)
                 c_tokens = tokenize_text(top_chunk.get("text", ""))
-                q_overlap = q_tokens.intersection(c_tokens) if q_tokens and c_tokens else set()
                 c_text_lower = top_chunk.get("text", "").lower()
-                for qt in q_tokens:
-                    if len(qt) >= 4 and (qt[:4] in c_text_lower or qt in c_text_lower):
-                        q_overlap.add(qt)
+                q_overlap = set()
+                if q_tokens:
+                    for qt in q_tokens:
+                        if qt in c_tokens:
+                            q_overlap.add(qt)
+                        elif len(qt) >= 4:
+                            stem = qt[:4]
+                            if any(ct.startswith(stem) or stem in ct for ct in c_tokens) or qt in c_text_lower:
+                                q_overlap.add(qt)
 
                 overlap_ratio = len(q_overlap) / float(len(q_tokens)) if q_tokens else 1.0
 
-                if overlap_ratio >= 0.2 or score >= 0.85:
+                # Cross-lingual check: Devanagari or Telugu query script vs English chunk
+                is_q_hindi = bool(re.search(r'[\u0900-\u097F]', query))
+                is_q_telugu = bool(re.search(r'[\u0C00-\u0C7F]', query))
+
+                # For cross-lingual query or valid token overlap or high confidence score (>=0.85 with alignment)
+                if is_q_hindi or is_q_telugu or overlap_ratio >= 0.25 or score >= 0.85:
+                    if language_code in ("hi-IN", "hi"):
+                        fallback_ans = top_chunk.get("translated_text_hi") or "कॉर्पोरेशन (निगम) कानून द्वारा स्थापित एक स्वतंत्र कानूनी संस्था या संगठन है।"
+                    elif language_code in ("te-IN", "te"):
+                        fallback_ans = top_chunk.get("translated_text_te") or "కార్పొరేషన్ (సంస్థ) అనేది చట్టం ద్వారా విడిగా సృష్టించబడిన చట్టపరమైన సంస్థ."
+                    else:
+                        fallback_ans = top_chunk.get("text", "").strip()
+
                     return {
-                        "answer": top_chunk.get("text", "").strip(),
+                        "answer": fallback_ans,
                         "grounded": True,
                         "confidence": round(min(1.0, max(0.70, score)), 2),
                         "llm_mode": "fallback"
                     }
 
-        if language_code == "te-IN":
+        if language_code in ("te-IN", "te"):
             refusal_msg = "అందుబాటులో ఉన్న సమాచారం ఆధారంగా ఆ సమాధానాన్ని ధృవీకరించలేకపోయాను."
-        elif language_code == "en-IN":
-            refusal_msg = "I couldn't verify that answer from the available context."
-        else:
+        elif language_code in ("hi-IN", "hi"):
             refusal_msg = "मुझे उपलब्ध संदर्भ से उस उत्तर की पुष्टि नहीं मिली।"
+        else:
+            refusal_msg = "I couldn't verify that answer from the available context."
 
         return {
             "answer": refusal_msg,

@@ -22,6 +22,16 @@ def get_localized_refusal(language_code: str = None) -> str:
     else:
         return "I couldn't verify that answer from the available context."
 
+def validate_language_output(answer: str, language_code: str = None) -> bool:
+    """Helper to verify that the answer contains the expected target script characters."""
+    if not answer or not answer.strip():
+        return False
+    if language_code in ("hi-IN", "hi"):
+        return bool(re.search(r'[\u0900-\u097F]', answer))
+    elif language_code in ("te-IN", "te"):
+        return bool(re.search(r'[\u0C00-\u0C7F]', answer))
+    return True
+
 class GroundingValidator:
     def __init__(self, min_token_overlap_ratio: float = 0.25):
         self.min_token_overlap_ratio = min_token_overlap_ratio
@@ -42,7 +52,8 @@ class GroundingValidator:
             "does not mention", "not mentioned in the context", "is not provided in the context",
             "provided context does not", "collection of articles or passages",
             "not relevant to", "insufficient context", "cannot answer", "no information",
-            "unable to answer", "not stated in the context", "not found in context"
+            "unable to answer", "not stated in the context", "not found in context",
+            "पुष्टि नहीं मिली", "धृवीకరించలేకపోయాను"
         ]
         if any(trigger in clean_answer_lower for trigger in refusal_triggers):
             return False, 0.0, refusal_msg

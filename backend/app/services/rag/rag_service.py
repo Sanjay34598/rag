@@ -130,10 +130,11 @@ class RAGService:
 
         # Diagnostic logging for chunk selection & thresholds
         try:
-            print(f"[RAG DIAGNOSTIC] Query: '{query}' | Selected Lang: '{language_code}' | Effective Lang: '{effective_lang}'")
+            safe_q = query.encode('ascii', 'replace').decode()
+            print(f"[RAG DIAGNOSTIC] Query: '{safe_q}' | Selected Lang: '{language_code}' | Effective Lang: '{effective_lang}'")
             for idx, c in enumerate(raw_chunks[:5], 1):
                 cid = c.get("chunk_id", f"c_{idx}")
-                ctext = c.get("text", "").replace("\n", " ")[:100]
+                ctext = c.get("text", "").replace("\n", " ")[:100].encode('ascii', 'replace').decode()
                 d_sc = float(c.get("dense_score", 0.0))
                 b_sc = float(c.get("bm25_score", 0.0))
                 f_sc = float(c.get("score", 0.0))
