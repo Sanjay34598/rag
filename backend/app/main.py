@@ -24,7 +24,7 @@ print("[BOOT] main.py imported")
 async def initialize_rag_background():
     try:
         service = get_rag_service()
-        await asyncio.to_thread(service.initialize, load_indexes=True)
+        await asyncio.to_thread(service.initialize, load_indexes=False)
     except Exception as e:
         print(f"[RAG INIT FAILED] {e}")
 
