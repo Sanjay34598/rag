@@ -128,6 +128,22 @@ class RAGService:
 
         raw_chunks = retrieval_res.get("results", [])
 
+        # Diagnostic logging for chunk selection & thresholds
+        try:
+            print(f"[RAG DIAGNOSTIC] Query: '{query}' | Selected Lang: '{language_code}' | Effective Lang: '{effective_lang}'")
+            for idx, c in enumerate(raw_chunks[:5], 1):
+                cid = c.get("chunk_id", f"c_{idx}")
+                ctext = c.get("text", "").replace("\n", " ")[:100]
+                d_sc = float(c.get("dense_score", 0.0))
+                b_sc = float(c.get("bm25_score", 0.0))
+                f_sc = float(c.get("score", 0.0))
+                passes = f_sc >= self.retrieval_guardrail.min_score
+                rej_reason = "Passes selection threshold" if passes else f"Rejected: final_score {f_sc:.4f} < min_score {self.retrieval_guardrail.min_score}"
+                print(f"  Chunk {idx}: ID={cid} | dense={d_sc:.4f} | bm25={b_sc:.4f} | final={f_sc:.4f} | passes_threshold={passes} | rejected={not passes} | reason='{rej_reason}'")
+                print(f"    text: '{ctext}...'")
+        except Exception as diag_err:
+            print(f"[RAG DIAGNOSTIC LOGGING ERROR] {diag_err}")
+
         # 3. Retrieval Confidence Check (Language-Aware Localized Refusal Fast Path)
         sufficient, top_score, ref_msg = self.retrieval_guardrail.evaluate(raw_chunks, query=query, language_code=effective_lang)
         if not sufficient:

@@ -20,7 +20,6 @@ class AnswerGenerator:
         if self._initialized:
             return
 
-        self.mode = settings.LLM_MODE.lower()
         self.provider = settings.LLM_PROVIDER.lower()
         self.model = settings.LLM_MODEL if settings.LLM_MODEL and "llama" in settings.LLM_MODEL else "llama-3.1-8b-instant"
         self.api_key = settings.GROQ_API_KEY or settings.LLM_API_KEY
@@ -79,19 +78,18 @@ class AnswerGenerator:
     def _offline_fallback_generate(self, query: str, context_chunks: List[Dict[str, Any]], language_code: str = None) -> Dict[str, Any]:
         """
         Extracted localized fallback message when offline mode, 429 rate limit, or API failure occurs.
-        NEVER returns raw Hindi context text as a final answer for Telugu or English queries.
+        Returns the top retrieved context chunk text as evidence for any target language (English, Hindi, Telugu).
         """
-        if self.mode == "fallback" and context_chunks:
+        if context_chunks:
             top_chunk = context_chunks[0]
             score = float(top_chunk.get("score", 0.0))
             if score >= settings.MIN_RETRIEVAL_SCORE:
-                if (language_code or "hi-IN") == "hi-IN":
-                    return {
-                        "answer": top_chunk.get("text", "").strip(),
-                        "grounded": True,
-                        "confidence": round(min(1.0, score), 2),
-                        "llm_mode": "fallback"
-                    }
+                return {
+                    "answer": top_chunk.get("text", "").strip(),
+                    "grounded": True,
+                    "confidence": round(min(1.0, max(0.70, score)), 2),
+                    "llm_mode": "fallback"
+                }
 
         if language_code == "te-IN":
             refusal_msg = "అందుబాటులో ఉన్న సమాచారం ఆధారంగా ఆ సమాధానాన్ని ధృవీకరించలేకపోయాను."
@@ -106,6 +104,10 @@ class AnswerGenerator:
             "confidence": 0.0,
             "llm_mode": "fallback_refusal"
         }
+
+    @property
+    def mode(self) -> str:
+        return settings.LLM_MODE.lower()
 
     def generate(self, query: str, prompt: str, context_chunks: List[Dict[str, Any]], language_code: str = None) -> Dict[str, Any]:
         if self.mode == "fallback" or not self.api_key:
