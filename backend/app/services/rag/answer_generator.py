@@ -6,6 +6,7 @@ import requests
 from typing import Dict, Any, List
 from groq import Groq
 from app.core.config import settings
+from app.services.rag.grounding_validator import tokenize_text
 
 class AnswerGenerator:
     _instance = None
@@ -78,18 +79,30 @@ class AnswerGenerator:
     def _offline_fallback_generate(self, query: str, context_chunks: List[Dict[str, Any]], language_code: str = None) -> Dict[str, Any]:
         """
         Extracted localized fallback message when offline mode, 429 rate limit, or API failure occurs.
-        Returns the top retrieved context chunk text as evidence for any target language (English, Hindi, Telugu).
+        Returns the top retrieved context chunk text as evidence for relevant queries across all target languages.
         """
         if context_chunks:
             top_chunk = context_chunks[0]
             score = float(top_chunk.get("score", 0.0))
             if score >= settings.MIN_RETRIEVAL_SCORE:
-                return {
-                    "answer": top_chunk.get("text", "").strip(),
-                    "grounded": True,
-                    "confidence": round(min(1.0, max(0.70, score)), 2),
-                    "llm_mode": "fallback"
-                }
+                # Query relevance check to prevent returning ungrounded fallback answers for unrelated queries
+                q_tokens = tokenize_text(query)
+                c_tokens = tokenize_text(top_chunk.get("text", ""))
+                q_overlap = q_tokens.intersection(c_tokens) if q_tokens and c_tokens else set()
+                c_text_lower = top_chunk.get("text", "").lower()
+                for qt in q_tokens:
+                    if len(qt) >= 4 and (qt[:4] in c_text_lower or qt in c_text_lower):
+                        q_overlap.add(qt)
+
+                overlap_ratio = len(q_overlap) / float(len(q_tokens)) if q_tokens else 1.0
+
+                if overlap_ratio >= 0.2 or score >= 0.85:
+                    return {
+                        "answer": top_chunk.get("text", "").strip(),
+                        "grounded": True,
+                        "confidence": round(min(1.0, max(0.70, score)), 2),
+                        "llm_mode": "fallback"
+                    }
 
         if language_code == "te-IN":
             refusal_msg = "అందుబాటులో ఉన్న సమాచారం ఆధారంగా ఆ సమాధానాన్ని ధృవీకరించలేకపోయాను."

@@ -39,8 +39,7 @@ class GroundingValidator:
             "पर्याप्त जानकारी नहीं मिली", "couldn't find", "couldn't verify",
             "refused:", "क्षमा करें", "క్షమించండి", "సమాధానం రూపొందించడానికి", "temporarily unavailable",
             "does not directly relate", "does not contain", "the context does not",
-            "does not mention", "not mention", "no mention", "not provided",
-            "not mentioned in the context", "is not provided in the context",
+            "does not mention", "not mentioned in the context", "is not provided in the context",
             "provided context does not", "collection of articles or passages",
             "not relevant to", "insufficient context", "cannot answer", "no information",
             "unable to answer", "not stated in the context", "not found in context"
@@ -86,9 +85,18 @@ class GroundingValidator:
         if is_ans_telugu and not is_ctx_telugu:
             return True, 0.90, answer
 
-        # Same-script token overlap evaluation
-        overlap = answer_tokens.intersection(context_tokens)
-        overlap_ratio = len(overlap) / float(len(answer_tokens))
+        # Same-script token overlap evaluation with stemming and substring support
+        context_text_lower = context_text.lower()
+        overlap = set()
+        for t in answer_tokens:
+            if t in context_tokens:
+                overlap.add(t)
+            elif len(t) >= 4:
+                stem = t[:4]
+                if any(ct.startswith(stem) or stem in ct for ct in context_tokens) or t in context_text_lower:
+                    overlap.add(t)
+
+        overlap_ratio = len(overlap) / float(len(answer_tokens)) if answer_tokens else 0.0
 
         if overlap_ratio < self.min_token_overlap_ratio:
             return False, round(overlap_ratio, 2), refusal_msg
