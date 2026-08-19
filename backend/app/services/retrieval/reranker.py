@@ -16,12 +16,18 @@ class RerankerService:
             return
         
         os.environ["USE_TF"] = "0"
-        from sentence_transformers import CrossEncoder
         self.model_name = model_name or settings.RERANKER_MODEL
-        print(f"[RerankerService] Initializing cross-encoder model: {self.model_name}")
-        self.model = CrossEncoder(self.model_name)
+        self._model = None
         self._initialized = True
-        print(f"[RerankerService] Cross-encoder model loaded successfully.")
+
+    @property
+    def model(self):
+        if self._model is None:
+            from sentence_transformers import CrossEncoder
+            print(f"[RerankerService] Lazy loading cross-encoder model: {self.model_name}")
+            self._model = CrossEncoder(self.model_name)
+            print(f"[RerankerService] Cross-encoder model loaded successfully.")
+        return self._model
 
     def rerank(self, query: str, candidates: List[Dict[str, Any]], top_k: int = 5) -> List[Dict[str, Any]]:
         if not candidates:

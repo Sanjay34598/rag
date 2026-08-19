@@ -36,12 +36,12 @@ class Settings:
     DENSE_WEIGHT: float = float(os.getenv("DENSE_WEIGHT", "0.7"))
     BM25_WEIGHT: float = float(os.getenv("BM25_WEIGHT", "0.3"))
     CANDIDATE_K: int = int(os.getenv("CANDIDATE_K", "20"))
-    TOP_K: int = int(os.getenv("TOP_K", "5"))
+    TOP_K: int = int(os.getenv("TOP_K", "3"))
     
     # Reranker Settings
     RERANKER_ENABLED: bool = os.getenv("RERANKER_ENABLED", "false").lower() in ("true", "1", "yes")
     RERANKER_MODEL: str = os.getenv("RERANKER_MODEL", "cross-encoder/ms-marco-MiniLM-L-6-v2")
-    RERANKER_TOP_N: int = int(os.getenv("RERANKER_TOP_N", "5"))
+    RERANKER_TOP_N: int = int(os.getenv("RERANKER_TOP_N", "3"))
 
     # LLM Settings (Groq Exclusive)
     LLM_MODE: str = os.getenv("LLM_MODE", "real").lower()  # "real" or "fallback"
@@ -55,7 +55,7 @@ class Settings:
     # Guardrails Settings
     MIN_RETRIEVAL_SCORE: float = float(os.getenv("MIN_RETRIEVAL_SCORE", "0.2"))
     MIN_CONTEXT_CHUNKS: int = int(os.getenv("MIN_CONTEXT_CHUNKS", "1"))
-    MAX_CONTEXT_CHUNKS: int = int(os.getenv("MAX_CONTEXT_CHUNKS", "5"))
+    MAX_CONTEXT_CHUNKS: int = int(os.getenv("MAX_CONTEXT_CHUNKS", "3"))
 
     # Sarvam STT Settings (Stage 5B)
     SARVAM_API_KEY: str = os.getenv("SARVAM_API_KEY", "")

@@ -27,19 +27,27 @@ class EmbeddingService:
         from sentence_transformers import SentenceTransformer
 
         self.model_name = model_name or settings.EMBEDDING_MODEL
-        print(f"[EmbeddingService] Initializing embedding model: {self.model_name}")
-        
-        # Optimize CPU threads for fast batch encoding
-        num_threads = min(8, os.cpu_count() or 4)
-        torch.set_num_threads(num_threads)
-        
-        self.model = SentenceTransformer(self.model_name)
-        # Warmup pass to pre-allocate PyTorch CPU memory and initialize oneDNN threads
-        with torch.inference_mode():
-            self.model.encode(["नमस्ते दुनिया warmup"], show_progress_bar=False, convert_to_numpy=True, normalize_embeddings=True)
+        self._model = None
         self._query_cache = {}
         self._initialized = True
-        print(f"[EmbeddingService] Embedding model loaded and pre-warmed (CPU Threads: {num_threads}).")
+
+    @property
+    def model(self):
+        if self._model is None:
+            import torch
+            from sentence_transformers import SentenceTransformer
+            print(f"[EmbeddingService] Lazy loading embedding model: {self.model_name}")
+            num_threads = min(8, os.cpu_count() or 4)
+            torch.set_num_threads(num_threads)
+            self._model = SentenceTransformer(self.model_name)
+            with torch.inference_mode():
+                self._model.encode(["नमस्ते दुनिया warmup"], show_progress_bar=False, convert_to_numpy=True, normalize_embeddings=True)
+            print(f"[EmbeddingService] Embedding model loaded and pre-warmed (CPU Threads: {num_threads}).")
+        return self._model
+
+    @property
+    def embedding_model(self):
+        return self.model
 
     def encode(self, texts: Union[str, List[str]], normalize: bool = True, batch_size: int = 256, show_progress: bool = True) -> np.ndarray:
         import torch

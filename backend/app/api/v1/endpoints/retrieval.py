@@ -8,7 +8,7 @@ router = APIRouter()
 
 class RetrieveRequest(BaseModel):
     query: str = Field(..., description="User search query string", example="kya vitamin b ka atyadhik sevan hanikarak hai?")
-    top_k: int = Field(default=5, ge=1, le=50, description="Number of final results to return")
+    top_k: int = Field(default=3, ge=1, le=50, description="Number of final results to return")
 
 class LatencyBreakdown(BaseModel):
     embedding_ms: float

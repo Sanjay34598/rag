@@ -48,6 +48,10 @@ class CanonicalRetriever:
         self.bm25_retriever.load()
         print(f"[CanonicalRetriever] Pre-warmed canonical index loaded successfully ({len(self.vector_store.metadata)} chunks from {self.index_dir}).")
 
+    def ensure_loaded(self):
+        if not getattr(self.vector_store, "_is_loaded", False) or not getattr(self.bm25_retriever, "_is_loaded", False):
+            self.load()
+
 class RetrievalService:
     _instance = None
 
@@ -69,10 +73,8 @@ class RetrievalService:
         self._initialized = True
 
     def initialize(self, load_indexes: bool = True) -> None:
-        print("[RAG INIT] Loading SentenceTransformer...")
         self.embedding_service = get_embedding_service()
         self.query_alignment_service = get_query_alignment_service()
-        self.query_alignment_service.initialize()
         
         canonical_dir = getattr(settings, "CANONICAL_INDEX_DIR", DATA_DIR / "indexes" / "canonical")
         if not canonical_dir.exists():
@@ -89,6 +91,7 @@ class RetrievalService:
             print("[RAG INIT] Loading canonical BM25 index...")
             print("[RAG INIT] Loading processed chunks...")
             self.canonical_retriever.load()
+            self.query_alignment_service.initialize()
             print("[RAG INIT] Pre-warming complete")
             
         for l_key in ["en", "hi", "te", "canonical"]:
@@ -111,7 +114,9 @@ class RetrievalService:
             raise ValueError("Query string cannot be empty or whitespace-only.")
 
         if not self.canonical_retriever:
-            self.initialize(load_indexes=True)
+            self.initialize(load_indexes=False)
+
+        self.canonical_retriever.ensure_loaded()
 
         target_lang = normalize_language_code(language_code)
         actual_top_k = top_k if top_k is not None else settings.TOP_K

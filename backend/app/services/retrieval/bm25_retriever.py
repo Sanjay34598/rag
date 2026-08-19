@@ -57,7 +57,7 @@ class BM25Retriever:
                 data = pickle.load(f)
             self.bm25 = data["bm25"]
             self.metadata = data["metadata"]
-            self.corpus_tokens = data.get("corpus_tokens", [])
+            self.corpus_tokens = []  # Unused during search, cleared to save RAM
             self._is_loaded = True
             print(f"[BM25Retriever] Loaded BM25 index from {self.index_path} ({len(self.metadata)} items)")
             return True
