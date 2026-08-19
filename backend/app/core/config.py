@@ -66,7 +66,8 @@ class Settings:
     SARVAM_TIMEOUT: float = float(os.getenv("SARVAM_TIMEOUT", "15.0"))
 
     # CORS Settings
-    ALLOWED_ORIGINS: str = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173,http://127.0.0.1:5173")
+    CORS_ORIGINS: str = os.getenv("CORS_ORIGINS", os.getenv("ALLOWED_ORIGINS", "https://voice-b0064qrq6-sanjays-projects-f2a71297.vercel.app,http://localhost:5173,http://localhost:3000,http://127.0.0.1:5173,http://127.0.0.1:3000"))
+    ALLOWED_ORIGINS: str = os.getenv("ALLOWED_ORIGINS", os.getenv("CORS_ORIGINS", "https://voice-b0064qrq6-sanjays-projects-f2a71297.vercel.app,http://localhost:5173,http://localhost:3000,http://127.0.0.1:5173,http://127.0.0.1:3000"))
 
 settings = Settings()
 

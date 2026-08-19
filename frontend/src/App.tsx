@@ -164,23 +164,11 @@ export default function App() {
     }
 
     try {
-      let res: Response
       const voiceEndpoint = getApiEndpoint('/api/v1/voice/query')
-      try {
-        res = await fetch(voiceEndpoint, {
-          method: 'POST',
-          body: formData,
-        })
-      } catch (networkErr: any) {
-        if (voiceEndpoint.startsWith('/')) {
-          res = await fetch('http://127.0.0.1:8000/api/v1/voice/query', {
-            method: 'POST',
-            body: formData,
-          })
-        } else {
-          throw networkErr
-        }
-      }
+      const res = await fetch(voiceEndpoint, {
+        method: 'POST',
+        body: formData,
+      })
 
       const data = await res.json().catch(() => ({}))
 
@@ -232,25 +220,12 @@ export default function App() {
     }
 
     try {
-      let res: Response
       const ragEndpoint = getApiEndpoint('/api/v1/rag/query')
-      try {
-        res = await fetch(ragEndpoint, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(reqBody),
-        })
-      } catch (networkErr: any) {
-        if (ragEndpoint.startsWith('/')) {
-          res = await fetch('http://127.0.0.1:8000/api/v1/rag/query', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(reqBody),
-          })
-        } else {
-          throw networkErr
-        }
-      }
+      const res = await fetch(ragEndpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(reqBody),
+      })
 
       const data = await res.json().catch(() => ({}))
 

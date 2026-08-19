@@ -47,9 +47,18 @@ app = FastAPI(
 )
 print("[BOOT] FastAPI app created")
 
-cors_origins = [o.strip() for o in settings.ALLOWED_ORIGINS.split(",") if o.strip()]
+import os
+
+raw_cors_origins = os.getenv("CORS_ORIGINS") or os.getenv("ALLOWED_ORIGINS") or getattr(settings, "CORS_ORIGINS", "")
+cors_origins = [o.strip() for o in raw_cors_origins.split(",") if o.strip()]
 if not cors_origins:
-    cors_origins = ["http://localhost:3000", "http://127.0.0.1:3000", "http://localhost:5173", "http://127.0.0.1:5173"]
+    cors_origins = [
+        "https://voice-b0064qrq6-sanjays-projects-f2a71297.vercel.app",
+        "http://localhost:5173",
+        "http://localhost:3000",
+        "http://127.0.0.1:5173",
+        "http://127.0.0.1:3000",
+    ]
 
 app.add_middleware(
     CORSMiddleware,
@@ -77,3 +86,11 @@ def health():
         "version": settings.VERSION,
         "rag_ready": getattr(service, "is_ready", False)
     }
+
+@app.get("/cors-test")
+def cors_test():
+    return {
+        "status": "ok",
+        "message": "CORS is working"
+    }
+
