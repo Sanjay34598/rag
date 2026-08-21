@@ -11,8 +11,8 @@ key = os.getenv("GROQ_API_KEY")
 client = Groq(api_key=key)
 res = client.chat.completions.create(
     messages=[{"role": "user", "content": "Hello, answer in JSON format: {\"answer\": \"Hi\"}"}],
-    model="llama-3.1-8b-instant",
+    model="openai/gpt-oss-20b",
     response_format={"type": "json_object"}
 )
-print("Groq Model 'llama-3.1-8b-instant' -> Output:", res.choices[0].message.content)
+print("Groq Model 'openai/gpt-oss-20b' -> Output:", res.choices[0].message.content)
 

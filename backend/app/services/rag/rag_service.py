@@ -128,19 +128,28 @@ class RAGService:
 
         raw_chunks = retrieval_res.get("results", [])
 
-        # Diagnostic logging for chunk selection & thresholds
+        # Diagnostic logging for query expansion, chunk selection, intent evaluation & thresholds
         try:
+            exp_info = retrieval_res.get("expansion_info", {})
             safe_q = query.encode('ascii', 'replace').decode()
-            print(f"[RAG DIAGNOSTIC] Query: '{safe_q}' | Selected Lang: '{language_code}' | Effective Lang: '{effective_lang}'")
+            norm_q = exp_info.get("normalized_query", safe_q)
+            exp_qs = exp_info.get("expanded_queries", [safe_q])
+            print(f"[RAG FULL DIAGNOSTIC]")
+            print(f"  Original Query  : '{safe_q}'")
+            print(f"  Normalized Query: '{norm_q}'")
+            print(f"  Expanded Queries: {exp_qs}")
+            print(f"  Query Intent    : '{exp_info.get('intent', 'general')}'")
+            print(f"  Used Pass 2     : {retrieval_res.get('used_pass2', False)}")
             for idx, c in enumerate(raw_chunks[:5], 1):
                 cid = c.get("chunk_id", f"c_{idx}")
                 ctext = c.get("text", "").replace("\n", " ")[:100].encode('ascii', 'replace').decode()
                 d_sc = float(c.get("dense_score", 0.0))
                 b_sc = float(c.get("bm25_score", 0.0))
                 f_sc = float(c.get("score", 0.0))
-                passes = f_sc >= self.retrieval_guardrail.min_score
-                rej_reason = "Passes selection threshold" if passes else f"Rejected: final_score {f_sc:.4f} < min_score {self.retrieval_guardrail.min_score}"
-                print(f"  Chunk {idx}: ID={cid} | dense={d_sc:.4f} | bm25={b_sc:.4f} | final={f_sc:.4f} | passes_threshold={passes} | rejected={not passes} | reason='{rej_reason}'")
+                passes_score = f_sc >= self.retrieval_guardrail.min_score
+                from app.services.retrieval.vitamin_expansion import does_chunk_support_intent
+                supports_intent, intent_msg = does_chunk_support_intent(c, exp_info.get("intent", "general"), query=query)
+                print(f"  Chunk {idx}: ID={cid} | dense={d_sc:.4f} | bm25={b_sc:.4f} | final={f_sc:.4f} | score_pass={passes_score} | intent_support={supports_intent} | intent_reason='{intent_msg}'")
                 print(f"    text: '{ctext}...'")
         except Exception as diag_err:
             print(f"[RAG DIAGNOSTIC LOGGING ERROR] {diag_err}")
@@ -166,9 +175,12 @@ class RAGService:
                 }
             }
 
-        # 4. Prompt Injection Protection & Sanitization
+        # 4. Filter Intent-Aligned Chunks & Prompt Injection Protection
         t0 = time.perf_counter()
-        clean_chunks = self.prompt_injection_guardrail.sanitize_chunks(raw_chunks)
+        from app.services.retrieval.vitamin_expansion import extract_query_intent, does_chunk_support_intent
+        q_intent = extract_query_intent(query)
+        intent_aligned_chunks = [c for c in raw_chunks if does_chunk_support_intent(c, q_intent, query=query)[0]]
+        clean_chunks = self.prompt_injection_guardrail.sanitize_chunks(intent_aligned_chunks)
 
         # 5. Context Building
         context_str = self.context_builder.build_context(clean_chunks)

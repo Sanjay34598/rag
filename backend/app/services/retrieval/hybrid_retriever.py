@@ -36,6 +36,9 @@ class HybridRetriever:
         bm25_raw_scores = [r["bm25_score"] for r in bm25_results]
         bm25_norm_scores = min_max_normalize(bm25_raw_scores, min_threshold=3.5)
         
+        # Absolute scaling boost for high-scoring BM25 direct matches
+        bm25_norm_scores = [max(norm_s, min(1.0, raw_s / 8.0)) for norm_s, raw_s in zip(bm25_norm_scores, bm25_raw_scores)]
+        
         candidates: Dict[str, Dict[str, Any]] = {}
         
         # Add dense candidates

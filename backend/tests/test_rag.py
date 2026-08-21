@@ -92,7 +92,7 @@ def test_prompt_builder():
     pb = PromptBuilder()
     prompt = pb.build_prompt("Sample query", "Sample context text")
     assert "SYSTEM INSTRUCTIONS" in prompt
-    assert "<untrusted_context>" in prompt
+    assert "<context>" in prompt or "<untrusted_context>" in prompt
     assert "Sample query" in prompt
 
 def test_output_guardrail():

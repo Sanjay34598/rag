@@ -1,0 +1,56 @@
+# Version control & CI/CD
+.git/
+.github/
+
+# Frontend (Not needed in FastAPI container)
+frontend/
+node_modules/
+dist/
+coverage/
+
+# Python Virtual Environments
+backend/.venv/
+backend/venv/
+.venv/
+env/
+venv/
+ENV/
+
+# Python Bytecode & Cache
+__pycache__/
+/**/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+
+# Logs & Temporary files
+*.log
+*.tmp
+*.temp
+
+# Environment Files
+.env
+.env.*
+!.env.example
+backend/.env
+backend/.env.*
+!backend/.env.example
+
+# IDE & OS Artifacts
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+.ipynb_checkpoints/
+
+# Development Documentation
+docs/
+DEEPNOTE.md
+
+# Raw Datasets (Not needed at production runtime; pre-built indexes in backend/data/indexes/ are used)
+backend/data/sample_hinval.parquet
+*.parquet

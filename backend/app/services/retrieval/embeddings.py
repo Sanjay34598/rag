@@ -4,6 +4,8 @@ os.environ["USE_TORCH"] = "1"
 os.environ["HF_HUB_DISABLE_SYMLINKS_WARNING"] = "1"
 
 import numpy as np
+import torch
+from sentence_transformers import SentenceTransformer
 from typing import List, Union
 from app.core.config import settings
 
@@ -22,9 +24,6 @@ class EmbeddingService:
         
         os.environ["USE_TF"] = "0"
         os.environ["HF_HUB_DISABLE_SYMLINKS_WARNING"] = "1"
-        
-        import torch
-        from sentence_transformers import SentenceTransformer
 
         self.model_name = model_name or settings.EMBEDDING_MODEL
         self._model = None
@@ -34,8 +33,6 @@ class EmbeddingService:
     @property
     def model(self):
         if self._model is None:
-            import torch
-            from sentence_transformers import SentenceTransformer
             print(f"[EmbeddingService] Lazy loading embedding model: {self.model_name}")
             num_threads = min(8, os.cpu_count() or 4)
             torch.set_num_threads(num_threads)
@@ -50,7 +47,6 @@ class EmbeddingService:
         return self.model
 
     def encode(self, texts: Union[str, List[str]], normalize: bool = True, batch_size: int = 256, show_progress: bool = True) -> np.ndarray:
-        import torch
         if isinstance(texts, str):
             texts = [texts]
             

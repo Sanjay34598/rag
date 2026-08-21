@@ -40,7 +40,7 @@ Configure the following environment variables in your Deepnote Project Settings 
 |----------------------|-----------------------------|
 | `GROQ_API_KEY` | Your secret Groq API key (Backend-only) |
 | `SARVAM_API_KEY` | Your secret Sarvam STT API key (Backend-only) |
-| `LLM_MODEL` | `llama-3.1-8b-instant` |
+| `LLM_MODEL` | `openai/gpt-oss-20b` |
 | `LLM_MODE` | `real` |
 | `LLM_PROVIDER` | `groq` |
 | `CORS_ORIGINS` | `https://voice-b0064qrq6-sanjays-projects-f2a71297.vercel.app,http://localhost:5173,http://localhost:3000` |
@@ -63,7 +63,7 @@ import threading
 import uvicorn
 
 # Ensure environment variables are loaded
-os.environ["LLM_MODEL"] = "llama-3.1-8b-instant"
+os.environ["LLM_MODEL"] = "openai/gpt-oss-20b"
 os.environ["LLM_MODE"] = "real"
 os.environ["LLM_PROVIDER"] = "groq"
 os.environ["CORS_ORIGINS"] = "https://voice-b0064qrq6-sanjays-projects-f2a71297.vercel.app,http://localhost:5173,http://localhost:3000"

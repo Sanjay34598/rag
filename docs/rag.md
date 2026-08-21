@@ -27,7 +27,7 @@ Final RAG Response Output
 
 ## LLM Configuration & Modes
 - **Configured Provider**: `groq`
-- **Configured Model**: `llama-3.1-8b-instant`
+- **Configured Model**: `openai/gpt-oss-20b`
 - **Current Mode**: `fallback` (No external API key set in current local environment)
 - **Status Flag**: `REAL_LLM_CONFIGURATION = NOT AVAILABLE`
 

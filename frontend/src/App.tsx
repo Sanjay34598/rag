@@ -664,7 +664,7 @@ export default function App() {
                 </div>
                 <div className="flex items-center justify-between border-b border-zinc-800/50 pb-1.5">
                   <span className="text-zinc-500">LLM</span>
-                  <span className="font-mono text-zinc-200">Groq llama-3.1-8b-instant</span>
+                  <span className="font-mono text-zinc-200">Groq openai/gpt-oss-20b</span>
                 </div>
                 <div className="flex items-center justify-between border-b border-zinc-800/50 pb-1.5">
                   <span className="text-zinc-500">STT Service</span>
@@ -726,7 +726,7 @@ export default function App() {
         {/* FOOTER */}
         <footer className="pt-6 border-t border-zinc-800 text-center sm:text-left text-xs text-zinc-500 flex flex-col sm:flex-row items-center justify-between gap-2">
           <span>Voice RAG • Multilingual Production Knowledge System</span>
-          <span className="font-mono text-[11px]">Sarvam STT (hi-IN / en-IN / te-IN) • FAISS/BM25 • Groq llama-3.1-8b-instant</span>
+          <span className="font-mono text-[11px]">Sarvam STT (hi-IN / en-IN / te-IN) • FAISS/BM25 • Groq openai/gpt-oss-20b</span>
         </footer>
 
       </div>

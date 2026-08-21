@@ -46,7 +46,7 @@ class Settings:
     # LLM Settings (Groq Exclusive)
     LLM_MODE: str = os.getenv("LLM_MODE", "real").lower()  # "real" or "fallback"
     LLM_PROVIDER: str = os.getenv("LLM_PROVIDER", "groq").lower()
-    LLM_MODEL: str = os.getenv("LLM_MODEL", "llama-3.1-8b-instant")
+    LLM_MODEL: str = os.getenv("LLM_MODEL", "openai/gpt-oss-20b")
     GROQ_API_KEY: str = os.getenv("GROQ_API_KEY", "")
     LLM_API_KEY: str = os.getenv("GROQ_API_KEY", "")
     LLM_MAX_RETRIES: int = int(os.getenv("LLM_MAX_RETRIES", "0"))
@@ -66,8 +66,8 @@ class Settings:
     SARVAM_TIMEOUT: float = float(os.getenv("SARVAM_TIMEOUT", "15.0"))
 
     # CORS Settings
-    CORS_ORIGINS: str = os.getenv("CORS_ORIGINS", os.getenv("ALLOWED_ORIGINS", "https://voice-b0064qrq6-sanjays-projects-f2a71297.vercel.app,http://localhost:5173,http://localhost:3000,http://127.0.0.1:5173,http://127.0.0.1:3000"))
-    ALLOWED_ORIGINS: str = os.getenv("ALLOWED_ORIGINS", os.getenv("CORS_ORIGINS", "https://voice-b0064qrq6-sanjays-projects-f2a71297.vercel.app,http://localhost:5173,http://localhost:3000,http://127.0.0.1:5173,http://127.0.0.1:3000"))
+    CORS_ORIGINS: str = os.getenv("CORS_ORIGINS", os.getenv("ALLOWED_ORIGINS", "https://voice-che0n6xg2-sanjays-projects-f2a71297.vercel.app,https://voice-rag-alpha.vercel.app,https://voice-b0064qrq6-sanjays-projects-f2a71297.vercel.app,http://localhost:5173,http://localhost:3000,http://127.0.0.1:5173,http://127.0.0.1:3000"))
+    ALLOWED_ORIGINS: str = os.getenv("ALLOWED_ORIGINS", os.getenv("CORS_ORIGINS", "https://voice-che0n6xg2-sanjays-projects-f2a71297.vercel.app,https://voice-rag-alpha.vercel.app,https://voice-b0064qrq6-sanjays-projects-f2a71297.vercel.app,http://localhost:5173,http://localhost:3000,http://127.0.0.1:5173,http://127.0.0.1:3000"))
 
 settings = Settings()
 

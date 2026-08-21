@@ -10,9 +10,9 @@ def tokenize_text(text: str) -> set:
     if not text:
         return set()
     text = text.lower()
-    tokens = re.findall(r'[\w\u0900-\u097F\u0C00-\u0C7F]+', text)
-    # Return non-empty word tokens excluding common stopwords
-    return {t for t in tokens if len(t) >= 2 and t not in HINDI_ENGLISH_TELUGU_STOPWORDS}
+    text = re.sub(r'[\u0964\u0965]', ' ', text)
+    raw_tokens = [t.strip('।,.:;!?()[]{}""\'\'`') for t in text.split()]
+    return {t for t in raw_tokens if len(t) >= 2 and t not in HINDI_ENGLISH_TELUGU_STOPWORDS}
 
 def get_localized_refusal(language_code: str = None) -> str:
     if language_code in ("te-IN", "te"):
@@ -61,6 +61,15 @@ class GroundingValidator:
         if not context_chunks:
             return False, 0.0, refusal_msg
 
+        # Intent alignment validation: verify context chunks support query intent
+        if query:
+            from app.services.retrieval.vitamin_expansion import extract_query_intent, does_chunk_support_intent
+            q_intent = extract_query_intent(query)
+            valid_chunks = [c for c in context_chunks if does_chunk_support_intent(c, q_intent)[0]]
+            if not valid_chunks:
+                print(f"[GROUNDING VALIDATOR REJECTION] No context chunk supports intent '{q_intent}' for query '{query}'")
+                return False, 0.0, refusal_msg
+
         # Conversational / courtesy phrase filter
         if query:
             clean_query = query.strip().lower()
@@ -76,35 +85,60 @@ class GroundingValidator:
         if not answer_tokens:
             return False, 0.0, refusal_msg
 
-        context_text = " ".join([c.get("text", "") for c in context_chunks])
+        # Check if answer is in a non-English script (Devanagari or Telugu)
+        is_ans_hindi = bool(re.search(r'[\u0900-\u097F]', answer))
+        is_ans_telugu = bool(re.search(r'[\u0C00-\u0C7F]', answer))
+
+        # Include translated text fields from context chunks for multilingual token validation
+        context_parts = []
+        for c in context_chunks:
+            context_parts.append(c.get("text", ""))
+            if is_ans_hindi or language_code in ("hi-IN", "hi"):
+                if c.get("translated_text_hi"):
+                    context_parts.append(c.get("translated_text_hi"))
+            if is_ans_telugu or language_code in ("te-IN", "te"):
+                if c.get("translated_text_te"):
+                    context_parts.append(c.get("translated_text_te"))
+
+        context_text = " ".join(context_parts)
         context_tokens = tokenize_text(context_text)
 
         if not context_tokens:
             return False, 0.0, refusal_msg
 
-        # Check if answer is in a non-English script (Devanagari or Telugu)
-        is_ans_hindi = bool(re.search(r'[\u0900-\u097F]', answer))
-        is_ans_telugu = bool(re.search(r'[\u0C00-\u0C7F]', answer))
-        
         is_ctx_hindi = bool(re.search(r'[\u0900-\u097F]', context_text))
         is_ctx_telugu = bool(re.search(r'[\u0C00-\u0C7F]', context_text))
 
-        # Cross-Lingual Grounding: If answer is Hindi/Telugu but context is English (canonical dataset evidence),
-        # token overlap cannot be calculated across different scripts. If answer passed refusal triggers, accept as grounded.
-        if is_ans_hindi and not is_ctx_hindi:
-            return True, 0.90, answer
-        if is_ans_telugu and not is_ctx_telugu:
-            return True, 0.90, answer
+        # Multilingual terminology entity mapping for cross-lingual token overlap evaluation
+        ENTITY_MAP = {
+            # Corporation, business & legal terminology
+            "निगम": "corporation", "कॉर्पोरेशन": "corporation",
+            "कल्याण": "welfare", "संस्था": "entity", "संगठन": "organization",
+            "कानून": "legal", "कानूनी": "legal", "स्थापित": "established",
+            "व्यक्ति": "person", "व्यक्तियों": "persons", "संघ": "association",
+            "व्यापार": "business", "कंपनी": "company",
+            "కార్పొరేషన్": "corporation", "సంస్థ": "corporation", "చట్టబద్ధమైన": "legal",
+            "చట్టం": "law", "చట్టపరమైన": "legal", "వ్యక్తుల": "persons", "వ్యాపారం": "business",
+            
+            # Vitamin & chemical terminology
+            "विटामिन": "vitamin", "विटामिनों": "vitamin",
+            "राइबोफ्लेविन": "riboflavin", "थायमिन": "thiamine",
+            "नायसिन": "niacin", "फॉलिक": "folic", "कोबालामिन": "cobalamin",
+            "पाइरिडोक्सिन": "pyridoxine", "बायोटिन": "biotin",
+            "విటమిన్": "vitamin", "విటమిన్లు": "vitamin",
+            "రిబోఫ్లావిన్": "riboflavin", "థయామిన్": "thiamine",
+            "నియాసిన్": "niacin", "ఫొలిక్": "folic", "కోబాలమిన్": "cobalamin",
+            "పైరిడాక్సిన్": "pyridoxine", "బయోటిన్": "biotin"
+        }
 
-        # Same-script token overlap evaluation with stemming and substring support
         context_text_lower = context_text.lower()
         overlap = set()
         for t in answer_tokens:
-            if t in context_tokens:
+            if t in context_tokens or (t in ENTITY_MAP and ENTITY_MAP[t] in context_tokens):
                 overlap.add(t)
-            elif len(t) >= 4:
+            elif len(t) >= 5:
                 stem = t[:4]
-                if any(ct.startswith(stem) or stem in ct for ct in context_tokens) or t in context_text_lower:
+                if any(ct.startswith(stem) for ct in context_tokens):
                     overlap.add(t)
 
         overlap_ratio = len(overlap) / float(len(answer_tokens)) if answer_tokens else 0.0

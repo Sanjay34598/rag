@@ -21,12 +21,15 @@ if hasattr(sys.stderr, "reconfigure"):
 
 print("[BOOT] main.py imported")
 
+import traceback
+
 async def initialize_rag_background():
     try:
         service = get_rag_service()
         await asyncio.to_thread(service.initialize, load_indexes=False)
     except Exception as e:
         print(f"[RAG INIT FAILED] {e}")
+        traceback.print_exc()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -51,14 +54,20 @@ import os
 
 raw_cors_origins = os.getenv("CORS_ORIGINS") or os.getenv("ALLOWED_ORIGINS") or getattr(settings, "CORS_ORIGINS", "")
 cors_origins = [o.strip() for o in raw_cors_origins.split(",") if o.strip()]
-if not cors_origins:
-    cors_origins = [
-        "https://voice-b0064qrq6-sanjays-projects-f2a71297.vercel.app",
-        "http://localhost:5173",
-        "http://localhost:3000",
-        "http://127.0.0.1:5173",
-        "http://127.0.0.1:3000",
-    ]
+
+default_origins = [
+    "https://voice-che0n6xg2-sanjays-projects-f2a71297.vercel.app",
+    "https://voice-rag-alpha.vercel.app",
+    "https://voice-b0064qrq6-sanjays-projects-f2a71297.vercel.app",
+    "http://localhost:5173",
+    "http://localhost:3000",
+    "http://127.0.0.1:5173",
+    "http://127.0.0.1:3000",
+]
+
+for orig in default_origins:
+    if orig not in cors_origins:
+        cors_origins.append(orig)
 
 app.add_middleware(
     CORSMiddleware,
