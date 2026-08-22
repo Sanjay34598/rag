@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { 
   Mic, Square, Loader2, CheckCircle2, AlertCircle, 
-  Search, FileText, Clock, Database, RefreshCw, ShieldCheck, Sparkles, Compass, Volume2
+  Search, FileText, Clock, Database, RefreshCw, ShieldCheck, 
+  Sparkles, Compass, Volume2, BookOpen, Activity
 } from 'lucide-react'
 import { getApiEndpoint } from './config/api'
 
@@ -51,8 +52,8 @@ export default function App() {
 
   const languageOptions = [
     { code: 'unknown', label: 'Auto Detect' },
-    { code: 'hi-IN', label: 'Hindi (hi-IN)' },
     { code: 'en-IN', label: 'English (en-IN)' },
+    { code: 'hi-IN', label: 'Hindi (hi-IN)' },
     { code: 'te-IN', label: 'Telugu (te-IN)' }
   ]
 
@@ -309,457 +310,398 @@ export default function App() {
     if (code === 'hi-IN') return 'Hindi (hi-IN)'
     if (code === 'en-IN') return 'English (en-IN)'
     if (code === 'te-IN') return 'Telugu (te-IN)'
-    return code || 'Auto Detected'
+    return code || 'Auto Detect'
   }
 
   const sampleQueries = [
-    { text: "कॉर्पोरेशन क्या है?", lang: "hi-IN", label: "Hindi: Corporation" },
-    { text: "What is a corporation?", lang: "en-IN", label: "English: Corporation" },
-    { text: "కార్పొరేషన్ అంటే ఏమిటి?", lang: "te-IN", label: "Telugu: Corporation" }
+    { text: "What is a corporation?", lang: "en-IN" },
+    { text: "कॉर्पोरेशन क्या है?", lang: "hi-IN" },
+    { text: "కార్పొరేషన్ అంటే ఏమిటి?", lang: "te-IN" }
   ]
 
   return (
-    <div className="min-h-screen bg-[#FFFDF5] text-[#0B3C2D] flex flex-col justify-between selection:bg-[#FF2A75] selection:text-white font-sans">
+    <div className="min-h-screen bg-[#FFFDF5] text-[#063B2E] flex flex-col justify-between selection:bg-[#FF2A75] selection:text-white font-sans">
       
-      {/* BACKGROUND COASTAL DECORATIVE MOTIF (SUBTLE) */}
-      <div className="fixed top-0 left-0 right-0 h-2 bg-gradient-to-r from-[#0B3C2D] via-[#FF2A75] to-[#FFC700] z-50" />
-
-      {/* MAIN CONTAINER */}
-      <div className="max-w-[1320px] w-full mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-12 space-y-10 flex-1">
-        
-        {/* ================================================== */}
-        {/* 1. HEADER SECTION */}
-        {/* ================================================== */}
-        <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-6 border-b border-[#0B3C2D]/15 gap-4">
-          <div className="flex items-center gap-3">
-            {/* HH Goa Identity Badge */}
-            <div className="bg-[#0B3C2D] text-[#FFF8E8] px-3.5 py-1.5 rounded-lg font-editorial font-extrabold text-sm tracking-wider flex items-center gap-2 shadow-sm">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#FF2A75]" />
-              <span>HH GOA 2026</span>
-            </div>
+      {/* ================================================== */}
+      {/* 1. HEADER (DARK GREEN #063B2E) */}
+      {/* ================================================== */}
+      <header className="bg-[#063B2E] text-[#FFF8E8] px-4 sm:px-8 py-3.5 flex flex-col md:flex-row items-center justify-between gap-4 border-b border-[#074C3A] shadow-md relative z-30">
+        <div className="flex items-center gap-4">
+          {/* Hibiscus Flower Icon + HH GOA 2026 */}
+          <div className="flex items-center gap-2.5">
+            <span className="text-2xl">🌺</span>
             <div>
-              <h1 className="text-xl font-extrabold tracking-tight text-[#0B3C2D] font-editorial flex items-center gap-2">
-                Voice RAG
-              </h1>
-              <p className="text-xs text-[#0B3C2D]/70 font-medium">
-                Multilingual Knowledge Engine
-              </p>
-            </div>
-          </div>
-
-          {/* System Status Pill */}
-          <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#FFF8E8] border border-[#0B3C2D]/20 text-[#0B3C2D] text-xs font-semibold shadow-xs">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#FF2A75] opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-[#FF2A75]"></span>
-              </span>
-              <span>System Ready</span>
-            </span>
-          </div>
-        </header>
-
-        {/* ================================================== */}
-        {/* 2. GOA HERO SECTION */}
-        {/* ================================================== */}
-        <section className="relative bg-[#FFF8E8] border border-[#E3D9C3] rounded-2xl p-6 sm:p-10 space-y-4 overflow-hidden shadow-xs">
-          
-          {/* Minimal Horizon / Wave Line SVG Accent */}
-          <div className="absolute top-0 right-0 w-96 h-96 opacity-10 pointer-events-none transform translate-x-20 -translate-y-20">
-            <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
-              <circle cx="100" cy="100" r="80" fill="#FFC700" />
-              <path d="M 0 100 Q 50 80, 100 100 T 200 100 L 200 200 L 0 200 Z" fill="#0B3C2D" />
-            </svg>
-          </div>
-
-          <div className="max-w-3xl space-y-3 relative z-10">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md bg-[#FF2A75]/10 text-[#FF2A75] text-xs font-bold uppercase tracking-wider">
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>Official HH Goa 2026 Demonstration</span>
-            </div>
-            
-            <h2 className="text-3xl sm:text-5xl font-extrabold text-[#0B3C2D] font-editorial tracking-tight leading-[1.15]">
-              Multilingual Intelligence for <span className="underline decoration-[#FF2A75] decoration-4 underline-offset-4">HH Goa 2026</span>
-            </h2>
-            
-            <p className="text-base sm:text-lg text-[#0B3C2D]/80 font-normal leading-relaxed max-w-2xl">
-              Ask questions in <strong className="text-[#0B3C2D] font-semibold">English, Hindi, or Telugu</strong>. Speak naturally and retrieve grounded knowledge instantly.
-            </p>
-          </div>
-        </section>
-
-        {/* ================================================== */}
-        {/* MAIN TWO-COLUMN RESPONSIVE LAYOUT */}
-        {/* ================================================== */}
-        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,2.1fr)_minmax(320px,0.9fr)] gap-8 items-start">
-          
-          {/* ================================================== */}
-          {/* LEFT COLUMN: INTERACTION & MAIN CONTENT */}
-          {/* ================================================== */}
-          <div className="space-y-8">
-            
-            {/* 3. QUESTION INTERFACE */}
-            <section className="bg-[#FFF8E8] border border-[#E3D9C3] rounded-2xl p-6 sm:p-8 space-y-6 shadow-xs">
-              
-              {/* Header & Language Selector */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-[#0B3C2D]/15">
-                <div>
-                  <h3 className="text-xl font-bold font-editorial text-[#0B3C2D] flex items-center gap-2">
-                    <Compass className="w-5 h-5 text-[#FF2A75]" />
-                    <span>Ask a Question</span>
-                  </h3>
-                  <p className="text-xs text-[#0B3C2D]/70 mt-0.5">
-                    Speak via microphone or type your question in English, Hindi, or Telugu.
-                  </p>
-                </div>
-
-                {/* Language Selector */}
-                <div className="flex items-center gap-2 bg-[#FFFDF5] border border-[#0B3C2D]/20 rounded-lg px-3 py-1.5 text-xs font-semibold">
-                  <span className="text-[#0B3C2D]/60 uppercase tracking-wider text-[10px] font-bold">Language:</span>
-                  <select
-                    value={selectedLang}
-                    onChange={(e) => setSelectedLang(e.target.value)}
-                    aria-label="Select target language"
-                    className="bg-transparent text-[#0B3C2D] font-semibold focus:outline-none cursor-pointer text-xs"
-                  >
-                    {languageOptions.map((opt) => (
-                      <option key={opt.code} value={opt.code} className="bg-[#FFFDF5] text-[#0B3C2D]">
-                        {opt.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+              <div className="font-editorial font-extrabold text-lg text-white tracking-wider leading-none">
+                HH GOA 2026
               </div>
+              <div className="text-[10px] font-bold text-[#FFD400] tracking-widest uppercase mt-0.5">
+                BUILD • HACK • INNOVATE
+              </div>
+            </div>
+          </div>
 
-              {/* PROMINENT MICROPHONE HERO INTERACTION CARD */}
-              <div className="bg-[#FFFDF5] border border-[#E3D9C3] rounded-xl p-6 text-center flex flex-col items-center justify-center space-y-4">
-                
+          {/* Vertical Divider */}
+          <div className="h-8 w-px bg-white/20 hidden sm:block" />
+
+          {/* Title */}
+          <div className="hidden sm:block">
+            <div className="font-editorial font-bold text-sm text-white leading-none">
+              Voice RAG
+            </div>
+            <div className="text-xs text-emerald-200/70 font-medium mt-0.5">
+              Multilingual Knowledge Engine
+            </div>
+          </div>
+        </div>
+
+        {/* Right Side Navigation + Status */}
+        <div className="flex items-center gap-6 text-xs font-semibold">
+          <nav className="flex items-center gap-5">
+            <a href="#home" className="text-white font-bold relative py-1 border-b-2 border-[#FF2A75]">Home</a>
+            <a href="#about" className="text-emerald-100/80 hover:text-white transition">About</a>
+            <a href="#works" className="text-emerald-100/80 hover:text-white transition">How it Works</a>
+          </nav>
+
+          <div className="flex items-center gap-2 bg-[#074C3A] border border-emerald-600/30 px-3.5 py-1.5 rounded-full shadow-inner">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+            <span className="text-emerald-200 text-xs font-medium">System Ready</span>
+          </div>
+        </div>
+      </header>
+
+      {/* ================================================== */}
+      {/* 2. GOA HERO SECTION WITH CINEMATIC LANDSCAPE */}
+      {/* ================================================== */}
+      <section className="relative min-h-[420px] sm:min-h-[480px] bg-cover bg-center bg-no-repeat flex flex-col items-center justify-start text-center px-4 pt-10 pb-28 space-y-4" style={{ backgroundImage: "url('/goa_hero_bg.jpg')" }}>
+        
+        {/* Soft golden sunset & tropical background gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-b from-[#063B2E]/70 via-black/25 to-[#FFFDF5] pointer-events-none" />
+
+        <div className="relative z-10 max-w-4xl space-y-3">
+          {/* Demonstration Badge */}
+          <div className="inline-flex items-center gap-2 px-4 py-1 rounded-full bg-[#FF2A75]/20 backdrop-blur-md border border-[#FF2A75]/40 text-[#FF2A75] text-xs font-extrabold uppercase tracking-wider shadow-sm">
+            <span>🌴 OFFICIAL HH GOA 2026 DEMONSTRATION</span>
+          </div>
+
+          {/* Main Headline */}
+          <h1 className="text-4xl sm:text-6xl font-extrabold font-editorial text-white tracking-tight drop-shadow-md leading-[1.1]">
+            Multilingual Intelligence <br />
+            for <span className="text-[#FF2A75]">HH Goa 2026</span>
+          </h1>
+
+          {/* Subtitle */}
+          <p className="text-base sm:text-lg text-white/95 font-medium max-w-2xl mx-auto drop-shadow-xs">
+            Ask questions in <strong className="text-white font-bold underline decoration-emerald-400 decoration-2">English</strong>, <strong className="text-[#FF2A75] font-bold underline decoration-[#FF2A75] decoration-2">Hindi</strong>, or <strong className="text-white font-bold underline decoration-emerald-400 decoration-2">Telugu</strong>.<br />
+            Speak naturally and retrieve grounded knowledge instantly.
+          </p>
+
+          {/* Pink Wavy Decoration */}
+          <div className="flex justify-center text-[#FF2A75] text-xl font-bold tracking-widest pt-1">
+            ~~~~~
+          </div>
+        </div>
+      </section>
+
+      {/* ================================================== */}
+      {/* 3. OVERLAPPING SEARCH / VOICE PANEL */}
+      {/* ================================================== */}
+      <div className="-mt-20 relative z-20 max-w-5xl mx-auto px-4 w-full">
+        <div className="bg-[#FFFDF5] border border-[#E8F0DF] rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-[auto_1fr_auto] gap-6 items-center">
+            
+            {/* MICROPHONE BUTTON (LEFT) */}
+            <div className="flex flex-col items-center justify-center space-y-2">
+              <div className="relative flex items-center justify-center">
+                {/* Waveform Decoration Ring */}
+                <div className="absolute -inset-2 flex items-center justify-between px-1 pointer-events-none opacity-50">
+                  <span className="w-1 h-8 bg-[#FF2A75] rounded-full animate-bounce" />
+                  <span className="w-1 h-12 bg-[#FFD400] rounded-full animate-pulse" />
+                  <span className="w-1 h-10 bg-[#FF2A75] rounded-full animate-bounce" />
+                </div>
+
                 {uiState === 'RECORDING' ? (
-                  <div className="space-y-3">
-                    {/* Animated Pulse Recording Button */}
-                    <button
-                      type="button"
-                      onClick={stopRecording}
-                      aria-label="Stop recording speech"
-                      className="w-24 h-24 rounded-full bg-[#FF2A75] text-white flex items-center justify-center animate-goa-pulse cursor-pointer shadow-lg mx-auto"
-                    >
-                      <Square className="w-8 h-8 fill-current" />
-                    </button>
-
-                    <div className="space-y-1">
-                      <p className="text-sm font-bold text-[#FF2A75] tracking-wide uppercase flex items-center justify-center gap-2">
-                        <span className="w-2.5 h-2.5 rounded-full bg-[#FF2A75] animate-ping" />
-                        Listening Active ({formatTime(recordingTime)})
-                      </p>
-                      <p className="text-xs text-[#0B3C2D]/70 font-medium">
-                        Speak clearly in {selectedLang === 'unknown' ? 'your preferred language' : getLanguageDisplayLabel(selectedLang)} — click to finish.
-                      </p>
-                    </div>
-                  </div>
-                ) : uiState === 'PROCESSING' ? (
-                  <div className="py-4 space-y-3">
-                    <div className="w-16 h-16 rounded-full bg-[#FFF8E8] border border-[#0B3C2D]/20 text-[#0B3C2D] flex items-center justify-center mx-auto">
-                      <Loader2 className="w-8 h-8 animate-spin text-[#FF2A75]" />
-                    </div>
-                    <p className="text-sm font-bold text-[#0B3C2D]">
-                      Retrieving grounded knowledge...
-                    </p>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={stopRecording}
+                    className="w-20 h-20 rounded-full bg-[#FF2A75] text-white flex items-center justify-center animate-goa-pulse cursor-pointer shadow-lg z-10 border-4 border-[#FFD400]"
+                    aria-label="Stop recording"
+                  >
+                    <Square className="w-8 h-8 fill-current" />
+                  </button>
                 ) : (
-                  <div className="space-y-3">
-                    <button
-                      type="button"
-                      onClick={startRecording}
-                      aria-label="Microphone input - speak in your language"
-                      className="w-24 h-24 rounded-full bg-[#0B3C2D] hover:bg-[#082E22] text-[#FFF8E8] flex items-center justify-center transition-all transform hover:scale-105 cursor-pointer shadow-md mx-auto group border-4 border-[#FFC700]"
-                      title="Click to speak"
-                    >
-                      <Mic className="w-10 h-10 text-[#FF2A75] group-hover:scale-110 transition-transform" />
-                    </button>
-
-                    <div className="space-y-1">
-                      <p className="text-sm font-bold text-[#0B3C2D] font-editorial">
-                        Click Microphone to Speak
-                      </p>
-                      <p className="text-xs text-[#0B3C2D]/70">
-                        Supports natural voice speech in Hindi, English & Telugu
-                      </p>
-                    </div>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={startRecording}
+                    disabled={uiState === 'PROCESSING'}
+                    className="w-20 h-20 rounded-full bg-[#063B2E] hover:bg-[#074C3A] text-white flex items-center justify-center transition transform hover:scale-105 cursor-pointer shadow-lg z-10 border-4 border-[#FFD400] group"
+                    title="Click to speak"
+                    aria-label="Start recording"
+                  >
+                    <Mic className="w-9 h-9 text-[#FF2A75] group-hover:scale-110 transition-transform" />
+                  </button>
                 )}
               </div>
 
-              {/* TEXT INPUT FORM */}
-              <form onSubmit={handleTextSubmit} className="space-y-2">
-                <div className="relative flex items-center w-full bg-[#FFFDF5] border border-[#0B3C2D]/20 rounded-xl focus-within:border-[#FF2A75] focus-within:ring-2 focus-within:ring-[#FF2A75]/20 transition-all">
-                  <input
-                    type="text"
-                    value={textQuery}
-                    onChange={(e) => setTextQuery(e.target.value)}
-                    disabled={uiState === 'RECORDING' || uiState === 'PROCESSING'}
-                    placeholder="Or type your question in Hindi (देवनागरी), English, or Telugu (తెలుగు)..."
-                    className="w-full bg-transparent px-4 py-3.5 text-sm sm:text-base text-[#0B3C2D] placeholder-[#0B3C2D]/40 focus:outline-none disabled:opacity-50 multilingual-text flex-1"
-                  />
+              {/* Timer Display */}
+              <span className="text-xs font-mono font-bold text-[#063B2E]">
+                {uiState === 'RECORDING' ? formatTime(recordingTime) : '00:00'}
+              </span>
+            </div>
 
-                  <div className="pr-2 shrink-0">
-                    <button
-                      type="submit"
-                      disabled={uiState === 'PROCESSING' || uiState === 'RECORDING' || !textQuery.trim()}
-                      className="px-5 py-2.5 bg-[#FF2A75] hover:bg-[#FF087F] text-white font-bold text-xs rounded-lg transition disabled:opacity-40 shrink-0 cursor-pointer shadow-xs uppercase tracking-wider"
-                    >
-                      Search
-                    </button>
-                  </div>
-                </div>
+            {/* INPUT & SAMPLE QUERIES (CENTER) */}
+            <div className="space-y-3">
+              <form onSubmit={handleTextSubmit} className="relative flex items-center">
+                <input
+                  type="text"
+                  value={textQuery}
+                  onChange={(e) => setTextQuery(e.target.value)}
+                  disabled={uiState === 'RECORDING' || uiState === 'PROCESSING'}
+                  placeholder="Ask anything... (English / हिंदी / తెలుగు)"
+                  className="w-full bg-[#FFF8E8] border border-[#DDE8D7] rounded-2xl px-5 py-3.5 pr-12 text-sm sm:text-base text-[#063B2E] placeholder-[#063B2E]/50 focus:outline-none focus:border-[#FF2A75] focus:ring-2 focus:ring-[#FF2A75]/20 font-medium multilingual-text shadow-inner"
+                />
+                <span className="absolute right-4 text-[#063B2E]/40 text-lg">⌨️</span>
               </form>
 
-              {/* Sample Queries */}
-              {uiState !== 'RECORDING' && uiState !== 'PROCESSING' && (
-                <div className="pt-3 border-t border-[#0B3C2D]/10 text-xs space-y-2">
-                  <span className="font-bold text-[#0B3C2D]/70 uppercase tracking-wider text-[11px]">Sample Queries:</span>
-                  <div className="flex flex-wrap gap-2">
-                    {sampleQueries.map((sample, idx) => (
-                      <button
-                        key={idx}
-                        onClick={() => handleSampleClick(sample.text, sample.lang)}
-                        className="px-3 py-1.5 bg-[#FFFDF5] hover:bg-[#FFF8E8] border border-[#0B3C2D]/20 hover:border-[#FF2A75] rounded-lg text-[#0B3C2D] font-medium transition cursor-pointer text-xs multilingual-text shadow-2xs"
-                      >
-                        <span className="font-bold text-[#FF2A75] mr-1">{sample.label.split(':')[0]}:</span>
-                        "{sample.text}"
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </section>
-
-            {/* ERROR NOTICE */}
-            {errorMsg && (
-              <div className="p-5 rounded-xl bg-[#FF2A75]/10 border border-[#FF2A75]/30 text-[#0B3C2D] flex items-start gap-3 text-sm">
-                <AlertCircle className="w-5 h-5 text-[#FF2A75] shrink-0 mt-0.5" />
-                <div>
-                  <h4 className="font-bold text-[#FF2A75]">System Notice</h4>
-                  <p className="text-xs text-[#0B3C2D]/80 mt-1 font-medium">{errorMsg}</p>
-                </div>
+              {/* Sample Queries Pills */}
+              <div className="flex flex-wrap items-center gap-2 text-xs">
+                <span className="text-[#063B2E]/60 font-bold">Try example:</span>
+                {sampleQueries.map((sample, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => handleSampleClick(sample.text, sample.lang)}
+                    className="px-3 py-1.5 bg-[#FFF8E8] hover:bg-[#E8F0DF] border border-[#DDE8D7] rounded-full text-[#063B2E] font-medium transition cursor-pointer text-xs multilingual-text shadow-2xs flex items-center gap-1.5"
+                  >
+                    <span>{sample.text}</span>
+                    <span className="text-[#FF2A75] font-bold">→</span>
+                  </button>
+                ))}
               </div>
-            )}
+            </div>
 
-            {/* 4. EDITORIAL ANSWER SECTION */}
-            {result && (
-              <section className="bg-[#FFF8E8] border-l-8 border-l-[#FF2A75] border border-[#E3D9C3] rounded-2xl p-6 sm:p-8 space-y-6 shadow-sm">
-                
-                {/* Header Metadata */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-[#0B3C2D]/15 pb-4 gap-2">
+            {/* LANGUAGE & SEARCH BUTTON (RIGHT) */}
+            <div className="flex flex-col sm:flex-row lg:flex-col items-stretch lg:items-end gap-3">
+              <div className="flex items-center justify-between gap-2 bg-[#FFF8E8] border border-[#DDE8D7] rounded-xl px-3 py-2 text-xs">
+                <span className="text-[#063B2E]/60 font-bold uppercase tracking-wider text-[10px]">LANGUAGE:</span>
+                <select
+                  value={selectedLang}
+                  onChange={(e) => setSelectedLang(e.target.value)}
+                  className="bg-transparent text-[#063B2E] font-bold focus:outline-none cursor-pointer text-xs"
+                >
+                  {languageOptions.map((opt) => (
+                    <option key={opt.code} value={opt.code} className="bg-[#FFFDF5] text-[#063B2E]">
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <button
+                type="submit"
+                onClick={handleTextSubmit}
+                disabled={uiState === 'PROCESSING' || uiState === 'RECORDING' || !textQuery.trim()}
+                className="px-6 py-3 bg-[#FF2A75] hover:bg-[#FF087F] text-white font-bold text-sm rounded-xl transition cursor-pointer shadow-md flex items-center justify-center gap-2 uppercase tracking-wider disabled:opacity-40"
+              >
+                <Search className="w-4 h-4" />
+                <span>Search</span>
+              </button>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      {/* ERROR NOTICE */}
+      {errorMsg && (
+        <div className="max-w-5xl mx-auto px-4 mt-6">
+          <div className="p-5 rounded-2xl bg-[#FF2A75]/10 border border-[#FF2A75]/30 text-[#063B2E] flex items-start gap-3 text-sm shadow-xs">
+            <AlertCircle className="w-5 h-5 text-[#FF2A75] shrink-0 mt-0.5" />
+            <div>
+              <h4 className="font-bold text-[#FF2A75]">Processing Notice</h4>
+              <p className="text-xs text-[#063B2E]/80 mt-1 font-medium">{errorMsg}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ================================================== */}
+      {/* 4. MAIN CONTENT AREA (ANSWER + PERFORMANCE + SOURCES) */}
+      {/* ================================================== */}
+      <main className="max-w-6xl mx-auto px-4 py-12 flex-1 w-full">
+        {result ? (
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-8 items-start">
+            
+            {/* LEFT COLUMN: ANSWER & PERFORMANCE */}
+            <div className="space-y-6">
+              
+              {/* ANSWER CARD */}
+              <section className="bg-[#FFFDF5] border border-[#E8F0DF] rounded-2xl p-6 sm:p-8 space-y-6 shadow-sm relative overflow-hidden">
+                {/* Subtle Palm Tree Watermark */}
+                <div className="absolute right-2 bottom-2 opacity-5 pointer-events-none text-9xl">
+                  🌴
+                </div>
+
+                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#DDE8D7] pb-4">
                   <div className="flex items-center gap-2">
-                    <span className="px-2.5 py-1 bg-[#0B3C2D] text-[#FFC700] text-xs font-bold uppercase tracking-wider rounded">
-                      ANSWER
+                    <span className="w-8 h-8 rounded-xl bg-[#063B2E] text-[#FFF8E8] flex items-center justify-center font-bold text-sm font-editorial shadow-xs">
+                      A
                     </span>
-                    <span className="text-xs font-semibold text-[#0B3C2D]/70">
-                      Language: {getLanguageDisplayLabel(result.language_code)}
-                    </span>
+                    <h3 className="text-xl font-bold font-editorial text-[#063B2E]">Answer</h3>
                   </div>
 
                   <div className="flex items-center gap-2">
                     {result.grounded ? (
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#0B3C2D] text-[#FFFDF5] text-xs font-bold">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-[#FFC700]" /> Grounded in Knowledge Base
+                      <span className="px-3.5 py-1 bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-full text-xs font-bold flex items-center gap-1.5 shadow-2xs">
+                        <span className="w-2 h-2 rounded-full bg-emerald-600" />
+                        Grounded
                       </span>
                     ) : (
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FF2A75]/15 text-[#FF2A75] text-xs font-bold border border-[#FF2A75]/30">
-                        <ShieldCheck className="w-3.5 h-3.5" /> Unverified
+                      <span className="px-3.5 py-1 bg-amber-100 text-amber-800 border border-amber-300 rounded-full text-xs font-bold shadow-2xs">
+                        Unverified
                       </span>
                     )}
-                    <span className="text-xs font-bold text-[#0B3C2D] bg-[#FFFDF5] px-2.5 py-1 rounded-full border border-[#0B3C2D]/15">
-                      Confidence: {(result.confidence * 100).toFixed(0)}%
+                    <span className="px-3 py-1 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-full text-xs font-bold shadow-2xs">
+                      Confidence <strong className="text-[#FF2A75]">{(result.confidence * 100).toFixed(0)}%</strong>
                     </span>
                   </div>
                 </div>
 
-                {/* Main Answer Content */}
-                <div className="space-y-3">
-                  <p className="text-xl sm:text-2xl text-[#0B3C2D] leading-relaxed font-normal multilingual-text">
+                <div className="space-y-4">
+                  <p className="text-lg sm:text-xl text-[#063B2E] leading-relaxed font-normal multilingual-text">
                     {result.answer}
                   </p>
-                </div>
 
-                {/* RECOGNIZED SPEECH TRANSCRIPT */}
-                {result.transcript && (
-                  <div className="p-4 bg-[#FFFDF5] border border-[#0B3C2D]/15 rounded-xl space-y-1.5">
-                    <div className="flex items-center justify-between text-xs font-bold text-[#0B3C2D]/60 uppercase tracking-wider">
-                      <span className="flex items-center gap-1.5">
-                        <Volume2 className="w-3.5 h-3.5 text-[#FF2A75]" />
-                        Recognized Speech
-                      </span>
-                      <span>Input Language: {getLanguageDisplayLabel(result.language_code)}</span>
-                    </div>
-                    <p className="text-base font-semibold text-[#0B3C2D] multilingual-text">
-                      "{result.transcript}"
-                    </p>
-                  </div>
-                )}
-              </section>
-            )}
-
-            {/* 5. CANONICAL SOURCES EVIDENCE */}
-            {result && (
-              <section className="bg-[#FFFDF5] border border-[#E3D9C3] rounded-2xl p-6 sm:p-8 space-y-4 shadow-xs">
-                <div className="flex items-center justify-between border-b border-[#0B3C2D]/15 pb-3">
-                  <div>
-                    <h4 className="text-sm font-bold font-editorial text-[#0B3C2D] uppercase tracking-wider flex items-center gap-2">
-                      <FileText className="w-4 h-4 text-[#FF2A75]" />
-                      <span>Canonical Evidence Sources ({result.sources?.length || 0})</span>
-                    </h4>
-                    <p className="text-xs text-[#0B3C2D]/60">
-                      MSMARCO multilingual dataset knowledge base verification
-                    </p>
-                  </div>
-                </div>
-
-                {result.sources && result.sources.length > 0 ? (
-                  <div className="space-y-3">
-                    {result.sources.map((source, idx) => (
-                      <div key={idx} className="p-4 bg-[#FFF8E8] border border-[#E3D9C3] rounded-xl space-y-2 text-xs">
-                        <div className="flex items-center justify-between font-mono font-semibold text-[#0B3C2D]">
-                          <span className="text-[#FF2A75] font-bold">
-                            #{String(idx + 1).padStart(2, '0')} &nbsp; Source Chunk • {source.chunk_id}
-                          </span>
-                          <div className="flex items-center gap-2">
-                            <span className="bg-[#FFFDF5] px-2 py-0.5 rounded border border-[#0B3C2D]/15 text-[11px]">
-                              Lang: {source.language === 'en' ? 'English' : source.language || 'English'}
-                            </span>
-                            <span className="bg-[#0B3C2D] text-[#FFF8E8] px-2 py-0.5 rounded text-[11px]">
-                              Score: {source.score}
-                            </span>
-                          </div>
-                        </div>
-                        <p className="text-xs sm:text-sm text-[#0B3C2D]/90 leading-relaxed multilingual-text pt-1">
-                          {source.text}
-                        </p>
+                  {/* RECOGNIZED SPEECH TRANSCRIPT */}
+                  {result.transcript && (
+                    <div className="p-4 bg-[#E8F0DF]/60 border border-[#063B2E]/10 rounded-xl space-y-1.5">
+                      <div className="flex items-center justify-between text-xs font-bold text-[#063B2E]/70">
+                        <span className="flex items-center gap-1.5">
+                          <Volume2 className="w-4 h-4 text-[#FF2A75]" />
+                          Recognized Speech
+                        </span>
+                        <span>Detected Language: <strong className="font-mono text-[#063B2E] bg-white/60 px-2 py-0.5 rounded border border-[#063B2E]/10">{getLanguageDisplayLabel(result.language_code)}</strong></span>
                       </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="p-4 bg-[#FFF8E8] border border-[#E3D9C3] rounded-xl text-xs text-[#0B3C2D]/70 font-medium">
-                    No verified sources retrieved for this query.
-                  </div>
-                )}
-              </section>
-            )}
-
-          </div>
-
-          {/* ================================================== */}
-          {/* RIGHT COLUMN: SIDEBAR METRICS & DETAILS */}
-          {/* ================================================== */}
-          <div className="space-y-6">
-
-            {/* 6. COMPACT PERFORMANCE METRICS PANEL */}
-            {result && (
-              <section className="bg-[#FFF8E8] border border-[#E3D9C3] rounded-2xl p-6 space-y-4 shadow-xs">
-                <div className="flex items-center justify-between border-b border-[#0B3C2D]/15 pb-2.5">
-                  <h3 className="text-xs font-bold text-[#0B3C2D] uppercase tracking-wider flex items-center gap-1.5">
-                    <Clock className="w-4 h-4 text-[#FF2A75]" />
-                    <span>Performance Metrics</span>
-                  </h3>
-                  <span className="text-[10px] font-mono font-bold bg-[#FFC700] text-[#0B3C2D] px-2 py-0.5 rounded">
-                    Real-time
-                  </span>
-                </div>
-
-                <div className="space-y-2.5 text-xs font-mono">
-                  {result.latency.stt_ms > 0 && (
-                    <div className="flex items-center justify-between text-[#0B3C2D]">
-                      <span className="font-sans font-medium text-[#0B3C2D]/70">Sarvam STT</span>
-                      <span className="font-bold">{result.latency.stt_ms} ms</span>
+                      <p className="text-base font-semibold text-[#063B2E] multilingual-text pt-0.5">
+                        "{result.transcript}"
+                      </p>
                     </div>
                   )}
-                  <div className="flex items-center justify-between text-[#0B3C2D]">
-                    <span className="font-sans font-medium text-[#0B3C2D]/70">Retrieval</span>
-                    <span className="font-bold">{result.latency.retrieval_ms} ms</span>
+                </div>
+              </section>
+
+              {/* PERFORMANCE SECTION */}
+              <section className="bg-[#FFFDF5] border border-[#E8F0DF] rounded-2xl p-6 space-y-4 shadow-2xs">
+                <div className="flex items-center gap-2 border-b border-[#DDE8D7] pb-3">
+                  <Clock className="w-5 h-5 text-[#063B2E]" />
+                  <h4 className="text-sm font-bold font-editorial text-[#063B2E] uppercase tracking-wider">Performance</h4>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <div className="p-3.5 bg-[#FFF8E8] border border-[#DDE8D7] rounded-xl text-center space-y-1 shadow-2xs">
+                    <span className="text-[10px] font-bold text-[#063B2E]/60 uppercase">Retrieval</span>
+                    <p className="text-base font-extrabold text-[#063B2E]">{result.latency.retrieval_ms} ms</p>
                   </div>
-                  <div className="flex items-center justify-between text-[#0B3C2D]">
-                    <span className="font-sans font-medium text-[#0B3C2D]/70">Groq LLM</span>
-                    <span className="font-bold">{result.latency.llm_ms} ms</span>
+                  <div className="p-3.5 bg-[#FFF8E8] border border-[#DDE8D7] rounded-xl text-center space-y-1 shadow-2xs">
+                    <span className="text-[10px] font-bold text-[#063B2E]/60 uppercase">STT (Sarvam)</span>
+                    <p className="text-base font-extrabold text-[#FF2A75]">{result.latency.stt_ms ? `${result.latency.stt_ms} ms` : '— ms'}</p>
                   </div>
-                  <div className="flex items-center justify-between text-[#0B3C2D] pt-2 border-t border-[#0B3C2D]/15">
-                    <span className="font-sans font-bold">Total Latency</span>
-                    <span className="font-extrabold text-[#FF2A75] text-sm">{result.latency.total_ms} ms</span>
+                  <div className="p-3.5 bg-[#FFF8E8] border border-[#DDE8D7] rounded-xl text-center space-y-1 shadow-2xs">
+                    <span className="text-[10px] font-bold text-[#063B2E]/60 uppercase">LLM (Groq)</span>
+                    <p className="text-base font-extrabold text-[#FF2A75]">{result.latency.llm_ms} ms</p>
+                  </div>
+                  <div className="p-3.5 bg-[#FFF8E8] border border-[#DDE8D7] rounded-xl text-center space-y-1 shadow-2xs">
+                    <span className="text-[10px] font-bold text-[#063B2E]/60 uppercase">Total</span>
+                    <p className="text-base font-extrabold text-[#063B2E]">{result.latency.total_ms} ms</p>
                   </div>
                 </div>
               </section>
-            )}
 
-            {/* TECHNICAL SPECS */}
-            <section className="bg-[#FFF8E8] border border-[#E3D9C3] rounded-2xl p-6 space-y-3 shadow-xs">
-              <h3 className="text-xs font-bold text-[#0B3C2D] uppercase tracking-wider flex items-center gap-1.5">
-                <Database className="w-4 h-4 text-[#0B3C2D]" />
-                <span>Architecture Details</span>
-              </h3>
-              <div className="space-y-2 text-xs text-[#0B3C2D]/80">
-                <div className="flex items-center justify-between border-b border-[#0B3C2D]/10 pb-1.5">
-                  <span className="text-[#0B3C2D]/60 font-medium">Vector Index</span>
-                  <span className="font-mono font-bold text-[#0B3C2D]">FAISS</span>
-                </div>
-                <div className="flex items-center justify-between border-b border-[#0B3C2D]/10 pb-1.5">
-                  <span className="text-[#0B3C2D]/60 font-medium">Sparse Search</span>
-                  <span className="font-mono font-bold text-[#0B3C2D]">Rank-BM25</span>
-                </div>
-                <div className="flex items-center justify-between border-b border-[#0B3C2D]/10 pb-1.5">
-                  <span className="text-[#0B3C2D]/60 font-medium">LLM Engine</span>
-                  <span className="font-mono font-bold text-[#0B3C2D]">Groq GPT-OSS</span>
-                </div>
-                <div className="flex items-center justify-between border-b border-[#0B3C2D]/10 pb-1.5">
-                  <span className="text-[#0B3C2D]/60 font-medium">Speech-to-Text</span>
-                  <span className="font-mono font-bold text-[#0B3C2D]">Sarvam saaras:v3</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-[#0B3C2D]/60 font-medium">Languages</span>
-                  <span className="font-mono font-bold text-[#FF2A75]">hi-IN, en-IN, te-IN</span>
-                </div>
-              </div>
-            </section>
-
-            {/* RESET ACTION */}
-            {result && (
+              {/* RESET ACTION BUTTON */}
               <button
                 onClick={resetDemo}
-                className="w-full bg-[#0B3C2D] hover:bg-[#082E22] text-[#FFF8E8] font-bold py-3 rounded-xl text-xs transition cursor-pointer flex items-center justify-center gap-2 shadow-xs uppercase tracking-wider"
+                className="w-full bg-[#063B2E] hover:bg-[#074C3A] text-[#FFF8E8] font-bold py-3.5 rounded-xl text-xs transition cursor-pointer flex items-center justify-center gap-2 shadow-sm uppercase tracking-wider"
               >
-                <RefreshCw className="w-4 h-4 text-[#FFC700]" />
+                <RefreshCw className="w-4 h-4 text-[#FFD400]" />
                 <span>Ask Another Question</span>
               </button>
-            )}
+
+            </div>
+
+            {/* RIGHT COLUMN: SOURCES PANEL */}
+            <aside className="bg-[#FFFDF5] border border-[#E8F0DF] rounded-2xl p-6 space-y-4 shadow-sm h-fit">
+              <div className="flex items-center justify-between border-b border-[#DDE8D7] pb-3">
+                <h4 className="text-base font-bold font-editorial text-[#063B2E] flex items-center gap-2">
+                  <BookOpen className="w-4 h-4 text-[#063B2E]" />
+                  <span>Sources ({result.sources?.length || 0})</span>
+                </h4>
+              </div>
+
+              <div className="space-y-3">
+                {result.sources?.map((src, idx) => (
+                  <div key={idx} className="p-3.5 bg-[#FFF8E8] border border-[#DDE8D7] rounded-xl space-y-2 text-xs shadow-2xs">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="w-6 h-6 rounded-full bg-[#063B2E] text-white flex items-center justify-center text-[10px] font-bold">
+                          {String(idx + 1).padStart(2, '0')}
+                        </span>
+                        <span className="font-mono font-bold text-[#063B2E] text-xs">{src.chunk_id}</span>
+                        <span className="bg-[#063B2E]/10 text-[#063B2E] px-1.5 py-0.5 rounded text-[10px] font-bold">
+                          {src.language?.toUpperCase() || 'EN'}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="text-[11px] font-bold text-[#FF2A75]">
+                      Score: {src.score}
+                    </div>
+                    <p className="text-xs text-[#063B2E]/80 leading-relaxed multilingual-text">
+                      {src.text}
+                    </p>
+                  </div>
+                ))}
+              </div>
+
+              <div className="pt-2 border-t border-[#DDE8D7] text-right">
+                <button className="text-xs font-bold text-[#FF2A75] hover:underline cursor-pointer">
+                  View all sources →
+                </button>
+              </div>
+            </aside>
 
           </div>
+        ) : (
+          <div className="text-center py-16 text-[#063B2E]/60 space-y-2">
+            <p className="text-base font-medium">
+              Ready for your query in English, Hindi, or Telugu.
+            </p>
+            <p className="text-xs">
+              Click the microphone button or type a question above to explore grounded knowledge.
+            </p>
+          </div>
+        )}
+      </main>
 
-        </div>
-
-        {/* ================================================== */}
-        {/* 7. GOA FOOTER & VISUAL ENDING */}
-        {/* ================================================== */}
-        <footer className="pt-8 border-t border-[#0B3C2D]/15 space-y-4">
+      {/* ================================================== */}
+      {/* 5. FOOTER (DARK GREEN WITH COASTAL SCENE) */}
+      {/* ================================================== */}
+      <footer className="bg-[#063B2E] text-[#FFF8E8] pt-10 pb-8 px-4 relative overflow-hidden border-t border-[#074C3A]">
+        {/* Coastal silhouette backdrop graphic */}
+        <div className="max-w-6xl mx-auto flex flex-col items-center justify-center space-y-4 text-center relative z-10">
           
-          {/* Subtle Wave Line SVG Graphic */}
-          <div className="w-full overflow-hidden leading-none opacity-20">
-            <svg viewBox="0 0 1200 40" preserveAspectRatio="none" className="w-full h-4">
-              <path d="M0,0 C150,30 350,-10 500,10 C650,30 900,-10 1200,0 L1200,40 L0,40 Z" fill="#0B3C2D" />
-            </svg>
+          <div className="flex items-center justify-center gap-3 text-lg font-editorial font-bold text-white">
+            <span>🌺</span>
+            <span>HH Goa 2026</span>
+            <span className="text-[#FF2A75]">|</span>
+            <span>Multilingual Voice RAG Demonstration</span>
+            <span>🌴</span>
           </div>
-
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-[#0B3C2D]/70 font-medium text-center sm:text-left">
-            <div className="flex items-center gap-2">
-              <span className="font-bold text-[#0B3C2D]">HH Goa 2026</span>
-              <span>•</span>
-              <span>Multilingual Voice RAG Demonstration</span>
-            </div>
-            <div className="font-mono text-[11px]">
-              Sarvam STT (hi-IN / en-IN / te-IN) • FAISS / Rank-BM25 • Groq LLM
-            </div>
+          
+          <div className="text-xs text-emerald-200/70 font-mono">
+            Sarvam STT (hi-IN / en-IN / te-IN) • FAISS / Rank-BM25 • Groq LLM
           </div>
-        </footer>
+        </div>
+      </footer>
 
-      </div>
     </div>
   )
 }
+
 
